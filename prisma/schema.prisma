@@ -1,0 +1,563 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  role          UserRole @default(USER)
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  assignedTasks     Task[]
+  createdProjects   Project[] @relation("ProjectCreator")
+  assignedProjects  Project[] @relation("ProjectAssignee")
+  estimates         Estimate[]
+  invoices          Invoice[]
+  communications    Communication[]
+  notes             Note[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+  VIEWER
+}
+
+// Client Management
+model Client {
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String
+  phone         String?
+  company       String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  source        LeadSource?
+  tags          String[]
+  status        ClientStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projects      Project[]
+  estimates     Estimate[]
+  invoices      Invoice[]
+  communications Communication[]
+  notes         Note[]
+
+  @@map("clients")
+}
+
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  ADVERTISING
+  COLD_CALL
+  OTHER
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  LOST
+}
+
+// Project Management
+model Project {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  status        ProjectStatus @default(PLANNING)
+  stage         ProjectStage @default(INITIAL_CONTACT)
+  startDate     DateTime?
+  endDate       DateTime?
+  budget        Decimal? @db.Decimal(10, 2)
+  actualCost    Decimal? @db.Decimal(10, 2)
+  location      String?
+  priority      Priority @default(MEDIUM)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  creatorId     String
+  creator       User     @relation("ProjectCreator", fields: [creatorId], references: [id])
+  assignees     User[]   @relation("ProjectAssignee")
+  tasks         Task[]
+  estimates     Estimate[]
+  invoices      Invoice[]
+  documents     Document[]
+  communications Communication[]
+  notes         Note[]
+  changeOrders  ChangeOrder[]
+
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectStage {
+  INITIAL_CONTACT
+  ESTIMATE_REQUESTED
+  ESTIMATE_SENT
+  CONTRACT_SIGNED
+  DEMO_SCHEDULED
+  DEMO_COMPLETED
+  INSTALLATION_SCHEDULED
+  INSTALLATION_IN_PROGRESS
+  INSTALLATION_COMPLETED
+  FINAL_INSPECTION
+  PROJECT_COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Task Management
+model Task {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  status        TaskStatus @default(PENDING)
+  priority      Priority @default(MEDIUM)
+  dueDate       DateTime?
+  completedAt   DateTime?
+  estimatedHours Decimal? @db.Decimal(5, 2)
+  actualHours   Decimal? @db.Decimal(5, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assigneeId    String?
+  assignee      User?    @relation(fields: [assigneeId], references: [id])
+  checklist     ChecklistItem[]
+  timeLogs      TimeLog[]
+
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Checklist Items
+model ChecklistItem {
+  id            String   @id @default(cuid())
+  title         String
+  isCompleted   Boolean  @default(false)
+  completedAt   DateTime?
+  order         Int
+  createdAt     DateTime @default(now())
+
+  // Relations
+  taskId        String
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("checklist_items")
+}
+
+// Time Logging
+model TimeLog {
+  id            String   @id @default(cuid())
+  startTime     DateTime
+  endTime       DateTime?
+  description   String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  taskId        String
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("time_logs")
+}
+
+// Estimates
+model Estimate {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  amount        Decimal  @db.Decimal(10, 2)
+  taxRate       Decimal  @default(0) @db.Decimal(5, 4)
+  discount      Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  status        EstimateStatus @default(DRAFT)
+  validUntil    DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  creatorId     String
+  creator       User     @relation(fields: [creatorId], references: [id])
+  lineItems     EstimateLineItem[]
+  contracts     Contract[]
+
+  @@map("estimates")
+}
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+// Estimate Line Items
+model EstimateLineItem {
+  id            String   @id @default(cuid())
+  description   String
+  quantity      Decimal  @db.Decimal(10, 2)
+  unitPrice     Decimal  @db.Decimal(10, 2)
+  totalPrice    Decimal  @db.Decimal(10, 2)
+  order         Int
+  createdAt     DateTime @default(now())
+
+  // Relations
+  estimateId    String
+  estimate      Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+
+  @@map("estimate_line_items")
+}
+
+// Contracts
+model Contract {
+  id            String   @id @default(cuid())
+  title         String
+  content       String
+  status        ContractStatus @default(DRAFT)
+  signedAt      DateTime?
+  signedBy      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  estimateId    String
+  estimate      Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+
+  @@map("contracts")
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  SIGNED
+  EXPIRED
+}
+
+// Invoices
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  title         String
+  description   String?
+  amount        Decimal  @db.Decimal(10, 2)
+  taxAmount     Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  status        InvoiceStatus @default(DRAFT)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  paymentMethod PaymentMethod?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  creatorId     String
+  creator       User     @relation(fields: [creatorId], references: [id])
+  payments      Payment[]
+
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  BANK_TRANSFER
+  STRIPE
+  OTHER
+}
+
+// Payments
+model Payment {
+  id            String   @id @default(cuid())
+  amount        Decimal  @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  reference     String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// Documents
+model Document {
+  id            String   @id @default(cuid())
+  name          String
+  type          DocumentType
+  url           String
+  size          Int
+  mimeType      String
+  uploadedAt    DateTime @default(now())
+
+  // Relations
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+enum DocumentType {
+  BLUEPRINT
+  PHOTO
+  CONTRACT
+  INVOICE
+  ESTIMATE
+  OTHER
+}
+
+// Communications
+model Communication {
+  id            String   @id @default(cuid())
+  type          CommunicationType
+  subject       String?
+  content       String
+  direction     CommunicationDirection
+  status        CommunicationStatus @default(SENT)
+  sentAt        DateTime @default(now())
+  readAt        DateTime?
+  emailSubject  String?
+  emailBody     String?
+  smsBody       String?
+  deliveryStatus String? @default("PENDING"
+
+  // Relations
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+
+  @@map("communications")
+}
+
+enum CommunicationType {
+  EMAIL
+  SMS
+  PHONE
+  IN_PERSON
+  OTHER
+}
+
+enum CommunicationDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CommunicationStatus {
+  DRAFT
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+// Notes
+model Note {
+  id            String   @id @default(cuid())
+  title         String?
+  content       String
+  isPrivate     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId      String?
+  client        Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("notes")
+}
+
+// Change Orders
+model ChangeOrder {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  amount        Decimal  @db.Decimal(10, 2)
+  status        ChangeOrderStatus @default(PENDING)
+  approvedAt    DateTime?
+  approvedBy    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("change_orders")
+}
+
+enum ChangeOrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// Notifications
+model Notification {
+  id            String   @id @default(cuid())
+  title         String
+  message       String
+  type          NotificationType
+  isRead        Boolean  @default(false)
+  readAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  TASK_DUE
+  PROJECT_UPDATE
+  INVOICE_DUE
+  ESTIMATE_ACCEPTED
+  ESTIMATE_REJECTED
+  PAYMENT_RECEIVED
+  SYSTEM_ALERT
+}
+
+// Settings
+model Setting {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String
+  description   String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum ChatMessageType {
+  TEXT
+  FILE
+  IMAGE
+}
+
+model TeamChatMessage {
+  id        String         @id @default(cuid())
+  content   String
+  type      ChatMessageType @default(TEXT)
+  isEdited  Boolean        @default(false)
+  editedAt  DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relations
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  
+  // Optional file attachment
+  fileUrl   String?
+  fileName  String?
+  fileType  String?
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model ClientPortalMessage {
+  id        String   @id @default(cuid())
+  content   String
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([projectId])
+} 
