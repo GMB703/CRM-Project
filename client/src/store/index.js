@@ -3,11 +3,11 @@ import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import { combineReducers } from 'redux'
 
-// Import slices
-import authSlice from './slices/authSlice'
-import uiSlice from './slices/uiSlice'
-import notificationSlice from './slices/notificationSlice'
-import filterSlice from './slices/filterSlice'
+// Import reducers (not slices)
+import authReducer from './slices/authSlice'
+import uiReducer from './slices/uiSlice'
+import notificationReducer from './slices/notificationSlice'
+import filterReducer from './slices/filterSlice'
 
 // Persist configuration
 const persistConfig = {
@@ -18,10 +18,10 @@ const persistConfig = {
 
 // Root reducer
 const rootReducer = combineReducers({
-  auth: authSlice,
-  ui: uiSlice,
-  notifications: notificationSlice,
-  filters: filterSlice,
+  auth: authReducer,
+  ui: uiReducer,
+  notifications: notificationReducer,
+  filters: filterReducer,
 })
 
 // Persisted reducer

@@ -78,12 +78,12 @@ const Layout = () => {
       </AnimatePresence>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}`}>
         <Sidebar />
       </div>
 
       {/* Main content */}
-      <div className={`lg:pl-64 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
         {/* Header */}
         <Header />
 

@@ -1,9 +1,9 @@
-const express = require('express');
-const multer = require('multer');
-const { PrismaClient } = require('@prisma/client');
-const asyncHandler = require('express-async-handler');
-const auth = require('../middleware/auth');
-const path = require('path');
+import express from 'express';
+import multer from 'multer';
+import { PrismaClient } from '@prisma/client';
+import asyncHandler from 'express-async-handler';
+import { auth } from '../middleware/auth.js';
+import path from 'path';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -165,4 +165,4 @@ router.delete(
   })
 );
 
-module.exports = router; 
+export default router; 

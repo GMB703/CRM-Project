@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -31,14 +31,15 @@ const auth = async (req, res, next) => {
       // Get user from database
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          isActive: true,
-          avatar: true,
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              isActive: true,
+            },
+          },
         },
       });
 
@@ -56,7 +57,19 @@ const auth = async (req, res, next) => {
         });
       }
 
-      req.user = user;
+      // Attach user and organization context to request
+      req.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isActive: user.isActive,
+        avatar: user.avatar,
+        organizationId: decoded.organizationId || user.organizationId,
+        organization: user.organization,
+      };
+      
       next();
     } catch (error) {
       return res.status(401).json({
@@ -91,19 +104,30 @@ const optionalAuth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await prisma.user.findUnique({
           where: { id: decoded.id },
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            isActive: true,
-            avatar: true,
+          include: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                isActive: true,
+              },
+            },
           },
         });
 
         if (user && user.isActive) {
-          req.user = user;
+          req.user = {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            isActive: user.isActive,
+            avatar: user.avatar,
+            organizationId: decoded.organizationId || user.organizationId,
+            organization: user.organization,
+          };
         }
       } catch (error) {
         // Token is invalid, but we don't throw an error
@@ -139,8 +163,4 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = {
-  auth,
-  optionalAuth,
-  authorize,
-}; 
+export { auth as default, auth, optionalAuth, authorize }; 

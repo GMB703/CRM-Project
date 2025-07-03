@@ -1,0 +1,165 @@
+<context>
+# Overview  
+The CRM project currently has a multi-tenant database schema designed with Organization entities but lacks the complete implementation. This PRD outlines the implementation of full multi-tenant functionality to allow multiple construction/remodeling companies to use the same CRM system while maintaining complete data isolation between organizations.
+
+The system will support:
+- Multiple organizations using the same platform
+- Complete data isolation between tenants
+- Organization-specific branding and settings
+- User management within organization boundaries
+- Seamless organization context switching for admin users
+
+# Core Features  
+## 1. Organization Management
+- Organization registration and setup
+- Organization settings and branding customization
+- Organization status management (active/inactive)
+- Organization-specific configuration
+
+## 2. Multi-Tenant Authentication
+- Organization-aware user authentication
+- Organization context establishment during login
+- JWT tokens with organization claims
+- Organization-specific user roles and permissions
+
+## 3. Data Isolation
+- All database queries filtered by organizationId
+- API endpoints enforcing organization boundaries
+- File storage organized by organization
+- Communication features scoped to organization
+
+## 4. Organization Context Management
+- Frontend organization context provider
+- Organization switching for super-admin users
+- Organization-specific navigation and features
+- Organization branding in UI
+
+## 5. Seed Data and Migration
+- Organization-aware database seeding
+- Migration scripts for existing data
+- Test data for multiple organizations
+
+# User Experience  
+## User Personas
+- **Super Admin**: Can manage multiple organizations, switch contexts
+- **Organization Admin**: Manages users and settings within their organization
+- **Organization Users**: Access features within their organization scope
+- **New Organization Owner**: Sets up and configures their organization
+
+## Key User Flows
+1. **Organization Registration**: New organization signup with initial admin user
+2. **User Login**: Organization-aware authentication with context establishment
+3. **Organization Setup**: Initial configuration, branding, and user invitation
+4. **Daily Usage**: All CRM features working within organization boundaries
+5. **Organization Management**: Admin managing organization settings and users
+</context>
+
+<PRD>
+# Technical Architecture  
+## System Components
+- **Organization Service**: Handles organization CRUD operations
+- **Multi-Tenant Middleware**: Enforces organization context in all requests
+- **Authentication Service**: Enhanced with organization-aware login
+- **Database Layer**: All queries include organizationId filtering
+- **Frontend Context**: React context for organization state management
+
+## Data Models
+- Organization model (already exists in schema)
+- Enhanced User model with organization relationships
+- All existing models already have organizationId foreign keys
+- Organization-specific settings and branding models
+
+## APIs and Integrations
+- Organization management endpoints
+- Enhanced authentication endpoints with organization context
+- All existing endpoints modified to include organization filtering
+- Organization invitation and user management APIs
+
+## Infrastructure Requirements
+- Database migrations for organization seeding
+- File storage organization by tenant
+- Environment configuration for multi-tenant setup
+- Logging and monitoring per organization
+
+# Development Roadmap  
+## Phase 1: Foundation (MVP)
+- Fix database seed file to create organizations
+- Implement organization-aware authentication
+- Create organization context middleware for backend
+- Basic organization management API endpoints
+
+## Phase 2: Backend Multi-Tenant Implementation
+- Update all existing route handlers to filter by organizationId
+- Implement organization management endpoints
+- Add organization-specific file storage
+- Update communication features for organization scope
+
+## Phase 3: Frontend Multi-Tenant Implementation
+- Create organization context provider in React
+- Update authentication flow to handle organization context
+- Modify all API calls to include organization context
+- Implement organization switching for admin users
+
+## Phase 4: Organization Management UI
+- Organization registration/setup flow
+- Organization settings and branding UI
+- User invitation and management within organization
+- Organization dashboard and analytics
+
+## Phase 5: Enhanced Features
+- Organization-specific branding and theming
+- Advanced organization settings
+- Organization usage analytics and billing preparation
+- Multi-organization user support for service providers
+
+# Logical Dependency Chain
+1. **Database Foundation**: Fix seed file and create organization data structure
+2. **Authentication Enhancement**: Update auth to handle organization context
+3. **Backend Data Isolation**: Implement organizationId filtering in all routes
+4. **Frontend Context**: Establish organization context in React app
+5. **API Integration**: Update frontend to use organization-aware APIs
+6. **User Interface**: Build organization management and switching UI
+7. **Testing and Validation**: Comprehensive testing with multiple organizations
+
+# Risks and Mitigations  
+## Technical Challenges
+- **Risk**: Complex data migration for existing data
+- **Mitigation**: Start with fresh database, implement migration scripts incrementally
+
+- **Risk**: Performance impact of organizationId filtering
+- **Mitigation**: Proper database indexing and query optimization
+
+- **Risk**: Frontend state management complexity
+- **Mitigation**: Use React Context with proper error boundaries and loading states
+
+## MVP Scope Management
+- **Risk**: Feature creep during implementation
+- **Mitigation**: Focus on core multi-tenancy first, defer advanced features
+
+- **Risk**: Breaking existing functionality
+- **Mitigation**: Implement feature flags and gradual rollout
+
+## Resource Constraints
+- **Risk**: Large scope affecting development timeline
+- **Mitigation**: Phased approach with working MVP after each phase
+
+# Appendix  
+## Technical Specifications
+- JWT tokens will include organizationId claim
+- All Prisma queries will include organizationId in where clauses
+- React Context will manage current organization state
+- File uploads will be organized in organization-specific folders
+- Database indexes on organizationId for all major tables
+
+## Research Findings
+- Current schema already supports multi-tenancy
+- Seed file needs complete rewrite to include organizations
+- Communication features (Socket.IO) need organization room management
+- All existing routes need organizationId filtering implementation
+
+## Implementation Notes
+- Maintain backward compatibility during development
+- Use TypeScript for better type safety with organization context
+- Implement comprehensive error handling for organization-related errors
+- Add logging for organization context and access patterns
+</PRD> 

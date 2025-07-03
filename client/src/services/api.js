@@ -1,276 +1,172 @@
 import axios from 'axios'
-import { store } from '../store'
-import { logout } from '../store/slices/authSlice'
-import toast from 'react-hot-toast'
 
-// Create axios instance
+const API_BASE_URL = '/api'  // Use proxy path instead of full URL
+
+// Create axios instance with base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Request interceptor
+// Request interceptor to add organization header
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// Response interceptor
-api.interceptors.response.use(
-  (response) => {
-    return response
-  },
-  (error) => {
-    const { response } = error
-
-    // Handle authentication errors
-    if (response?.status === 401) {
-      localStorage.removeItem('token')
-      store.dispatch(logout())
-      toast.error('Session expired. Please login again.')
-      window.location.href = '/login'
-      return Promise.reject(error)
-    }
-
-    // Handle server errors
-    if (response?.status >= 500) {
-      toast.error('Server error. Please try again later.')
-      return Promise.reject(error)
-    }
-
-    // Handle validation errors
-    if (response?.status === 422) {
-      const errors = response.data.errors
-      if (errors && Array.isArray(errors)) {
-        errors.forEach(error => {
-          toast.error(error.message || 'Validation error')
-        })
-      } else {
-        toast.error(response.data.message || 'Validation error')
+    // Add organization ID from localStorage if available and not super admin
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role !== 'SUPER_ADMIN') {
+      const organizationId = localStorage.getItem('organizationId');
+      if (organizationId) {
+        config.headers['x-organization-id'] = organizationId;
       }
-      return Promise.reject(error)
     }
-
-    // Handle other errors
-    if (response?.data?.message) {
-      toast.error(response.data.message)
-    } else {
-      toast.error('An error occurred. Please try again.')
+    
+    // Add auth token
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth data on unauthorized
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('organizationId')
+      
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
     return Promise.reject(error)
   }
 )
 
-// API endpoints
-export const endpoints = {
-  // Auth
-  auth: {
-    login: '/auth/login',
-    register: '/auth/register',
-    logout: '/auth/logout',
-    me: '/auth/me',
-    updatePassword: '/auth/updatepassword',
-    forgotPassword: '/auth/forgotpassword',
-    resetPassword: (token) => `/auth/resetpassword/${token}`,
+// Organization service methods
+export const organizationService = {
+  // Get current organization from JWT token
+  getCurrentOrganizationFromToken() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (!payload.organizationId) return null;
+      
+      return {
+        id: payload.organizationId,
+        name: payload.organization?.name,
+        code: payload.organization?.code,
+        userRole: payload.organizationRole || 'MEMBER'
+      };
+    } catch (error) {
+      console.error('Error parsing organization from token:', error);
+      return null;
+    }
   },
 
-  // Users
-  users: {
-    list: '/users',
-    create: '/users',
-    get: (id) => `/users/${id}`,
-    update: (id) => `/users/${id}`,
-    delete: (id) => `/users/${id}`,
-    profile: '/users/profile',
+  // Get current organization from API
+  async getCurrentOrganization() {
+    try {
+      const response = await api.get('/organizations/current');
+      return response.data?.data ? {
+        success: true,
+        data: response.data.data
+      } : null;
+    } catch (error) {
+      // If 403, try to get organization from token as fallback
+      if (error.response?.status === 403) {
+        const tokenOrg = this.getCurrentOrganizationFromToken();
+        if (tokenOrg) {
+          return {
+            success: true,
+            data: tokenOrg
+          };
+        }
+      }
+      throw error;
+    }
   },
 
-  // Clients
-  clients: {
-    list: '/clients',
-    create: '/clients',
-    get: (id) => `/clients/${id}`,
-    update: (id) => `/clients/${id}`,
-    delete: (id) => `/clients/${id}`,
-    import: '/clients/import',
-    export: '/clients/export',
+  // Get available organizations (super admin only)
+  async getAvailableOrganizations() {
+    const response = await api.get('/organizations/available');
+    return response.data;
   },
 
-  // Projects
-  projects: {
-    list: '/projects',
-    create: '/projects',
-    get: (id) => `/projects/${id}`,
-    update: (id) => `/projects/${id}`,
-    delete: (id) => `/projects/${id}`,
-    duplicate: (id) => `/projects/${id}/duplicate`,
-    archive: (id) => `/projects/${id}/archive`,
-    restore: (id) => `/projects/${id}/restore`,
-  },
-
-  // Tasks
-  tasks: {
-    list: '/tasks',
-    create: '/tasks',
-    get: (id) => `/tasks/${id}`,
-    update: (id) => `/tasks/${id}`,
-    delete: (id) => `/tasks/${id}`,
-    complete: (id) => `/tasks/${id}/complete`,
-    assign: (id) => `/tasks/${id}/assign`,
-    checklist: (id) => `/tasks/${id}/checklist`,
-    timeLog: (id) => `/tasks/${id}/timelog`,
-  },
-
-  // Estimates
-  estimates: {
-    list: '/estimates',
-    create: '/estimates',
-    get: (id) => `/estimates/${id}`,
-    update: (id) => `/estimates/${id}`,
-    delete: (id) => `/estimates/${id}`,
-    send: (id) => `/estimates/${id}/send`,
-    accept: (id) => `/estimates/${id}/accept`,
-    reject: (id) => `/estimates/${id}/reject`,
-    duplicate: (id) => `/estimates/${id}/duplicate`,
-    lineItems: (id) => `/estimates/${id}/line-items`,
-  },
-
-  // Invoices
-  invoices: {
-    list: '/invoices',
-    create: '/invoices',
-    get: (id) => `/invoices/${id}`,
-    update: (id) => `/invoices/${id}`,
-    delete: (id) => `/invoices/${id}`,
-    send: (id) => `/invoices/${id}/send`,
-    markPaid: (id) => `/invoices/${id}/mark-paid`,
-    duplicate: (id) => `/invoices/${id}/duplicate`,
-    payments: (id) => `/invoices/${id}/payments`,
-  },
-
-  // Documents
-  documents: {
-    list: '/documents',
-    upload: '/documents/upload',
-    get: (id) => `/documents/${id}`,
-    delete: (id) => `/documents/${id}`,
-    download: (id) => `/documents/${id}/download`,
-  },
-
-  // Communications
-  communications: {
-    list: '/communications',
-    create: '/communications',
-    get: (id) => `/communications/${id}`,
-    update: (id) => `/communications/${id}`,
-    delete: (id) => `/communications/${id}`,
-    send: (id) => `/communications/${id}/send`,
-  },
-
-  // Dashboard
-  dashboard: {
-    overview: '/dashboard/overview',
-    pipeline: '/dashboard/pipeline',
-    revenue: '/dashboard/revenue',
-    tasks: '/dashboard/tasks',
-    notifications: '/dashboard/notifications',
-  },
-
-  // Reports
-  reports: {
-    clients: '/reports/clients',
-    projects: '/reports/projects',
-    revenue: '/reports/revenue',
-    tasks: '/reports/tasks',
-    export: '/reports/export',
-  },
-
-  // Settings
-  settings: {
-    get: '/settings',
-    update: '/settings',
-    company: '/settings/company',
-    users: '/settings/users',
-    roles: '/settings/roles',
-    integrations: '/settings/integrations',
-  },
-}
-
-// Generic API methods
-export const apiService = {
-  // GET request
-  get: async (url, config = {}) => {
-    const response = await api.get(url, config)
-    return response.data
-  },
-
-  // POST request
-  post: async (url, data = {}, config = {}) => {
-    const response = await api.post(url, data, config)
-    return response.data
-  },
-
-  // PUT request
-  put: async (url, data = {}, config = {}) => {
-    const response = await api.put(url, data, config)
-    return response.data
-  },
-
-  // PATCH request
-  patch: async (url, data = {}, config = {}) => {
-    const response = await api.patch(url, data, config)
-    return response.data
-  },
-
-  // DELETE request
-  delete: async (url, config = {}) => {
-    const response = await api.delete(url, config)
-    return response.data
-  },
-
-  // File upload
-  upload: async (url, formData, config = {}) => {
-    const response = await api.post(url, formData, {
-      ...config,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        ...config.headers,
-      },
-    })
-    return response.data
-  },
-
-  // File download
-  download: async (url, filename, config = {}) => {
-    const response = await api.get(url, {
-      ...config,
-      responseType: 'blob',
-    })
+  // Switch organization context (super admin only)
+  async switchOrganization(organizationId) {
+    const response = await api.post('/auth/switch-organization', {
+      organizationId
+    });
     
-    const blob = new Blob([response.data])
-    const downloadUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(downloadUrl)
+    // If successful, update localStorage and return unwrapped data
+    if (response.data?.data?.token) {
+      const token = response.data.data.token;
+      localStorage.setItem('token', token);
+      
+      // Update axios default headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // Update organization context in localStorage only if not super admin
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role !== 'SUPER_ADMIN') {
+        if (response.data.data.organization) {
+          localStorage.setItem('organizationId', response.data.data.organization.id);
+        } else {
+          localStorage.setItem('organizationId', organizationId);
+        }
+      } else {
+        // For super admin, remove any stored organizationId
+        localStorage.removeItem('organizationId');
+      }
+      
+      // Update user data if provided
+      if (response.data.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      }
+    }
     
-    return response.data
-  },
-}
+    return response.data;
+  }
+};
 
-// Export the api instance for direct use if needed
+export const dashboardService = {
+  // Get dashboard overview data
+  async getDashboardOverview() {
+    const response = await api.get('/dashboard/overview');
+    return response.data?.data || response.data;
+  },
+
+  // Get project pipeline data
+  async getPipeline() {
+    const response = await api.get('/dashboard/pipeline');
+    return response.data?.data || response.data;
+  },
+
+  // Get revenue analytics
+  async getRevenueAnalytics(period = 'month') {
+    const response = await api.get(`/dashboard/revenue?period=${period}`);
+    return response.data?.data || response.data;
+  },
+
+  // Get task analytics
+  async getTaskAnalytics() {
+    const response = await api.get('/dashboard/tasks');
+    return response.data?.data || response.data;
+  }
+};
+
 export default api 

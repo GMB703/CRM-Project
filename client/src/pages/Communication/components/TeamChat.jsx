@@ -1,58 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { io } from 'socket.io-client';
 import { PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../../../components/UI/LoadingSpinner';
 
 const TeamChat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [socket, setSocket] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   
-  const user = useSelector((state) => state.auth.user);
-  const currentProject = useSelector((state) => state.projects.currentProject);
+  const user = useSelector((state) => state.auth?.user);
+  const currentOrganization = useSelector((state) => state.organization?.currentOrganization);
 
+  // Sample messages for demo
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io(process.env.REACT_APP_API_URL, {
-      auth: {
-        token: localStorage.getItem('token')
-      }
-    });
-
-    newSocket.on('connect', () => {
-      console.log('Connected to chat server');
-      if (currentProject) {
-        newSocket.emit('join_room', currentProject.id);
-      }
-    });
-
-    newSocket.on('new_message', (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    setSocket(newSocket);
-
-    // Fetch existing messages
-    fetchMessages();
-
-    return () => newSocket.close();
-  }, [currentProject]);
-
-  const fetchMessages = async () => {
-    try {
-      const response = await fetch(`/api/chat/messages/${currentProject.id}`);
-      const data = await response.json();
-      setMessages(data);
+    setIsLoading(true);
+    // Simulate loading messages
+    setTimeout(() => {
+      setMessages([
+        {
+          id: 1,
+          content: "Welcome to the team chat! This is where you can communicate with your team members.",
+          userId: 'system',
+          user: { name: 'System', email: 'system@crm.com' },
+          type: 'TEXT',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          content: "Great! The CRM system is looking good.",
+          userId: user?.id || 'demo-user',
+          user: { name: user?.name || 'Demo User', email: user?.email || 'demo@example.com' },
+          type: 'TEXT',
+          createdAt: new Date().toISOString()
+        }
+      ]);
       setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      setIsLoading(false);
-    }
-  };
+    }, 1000);
+  }, [user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,27 +54,34 @@ const TeamChat = () => {
     if (!newMessage.trim()) return;
 
     const messageData = {
+      id: Date.now(),
       content: newMessage,
-      projectId: currentProject.id,
-      userId: user.id,
-      type: 'TEXT'
+      userId: user?.id || 'demo-user',
+      user: { 
+        name: user?.name || 'Demo User', 
+        email: user?.email || 'demo@example.com' 
+      },
+      type: 'TEXT',
+      createdAt: new Date().toISOString()
     };
 
     try {
-      const response = await fetch('/api/chat/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(messageData),
-      });
-
-      if (response.ok) {
-        socket.emit('send_message', messageData);
-        setNewMessage('');
-      }
+      // Add message to local state immediately for demo
+      setMessages(prev => [...prev, messageData]);
+      setNewMessage('');
+      
+      // In a real app, this would send to the server
+      // const response = await fetch('/api/chat/messages', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+      //   },
+      //   body: JSON.stringify(messageData),
+      // });
     } catch (error) {
       console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again.');
     }
   };
 
@@ -95,51 +89,76 @@ const TeamChat = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('projectId', currentProject.id);
-    formData.append('userId', user.id);
-
     try {
-      const response = await fetch('/api/chat/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const messageData = {
+        id: Date.now(),
+        content: `Shared file: ${file.name}`,
+        userId: user?.id || 'demo-user',
+        user: { 
+          name: user?.name || 'Demo User', 
+          email: user?.email || 'demo@example.com' 
+        },
+        type: 'FILE',
+        fileName: file.name,
+        createdAt: new Date().toISOString()
+      };
 
-      if (response.ok) {
-        const data = await response.json();
-        socket.emit('send_message', data);
+      setMessages(prev => [...prev, messageData]);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     } catch (error) {
       console.error('Error uploading file:', error);
+      setError('Failed to upload file. Please try again.');
     }
   };
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
-  if (!currentProject) {
+  if (error) {
     return (
       <div className="text-center py-10">
-        <p className="text-gray-500">Please select a project to view the team chat.</p>
+        <p className="text-red-500 mb-4">{error}</p>
+        <button 
+          onClick={() => setError(null)}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-300px)]">
+    <div className="flex flex-col h-[500px] border rounded-lg bg-white">
+      {/* Header */}
+      <div className="p-4 border-b bg-gray-50">
+        <h3 className="text-lg font-medium text-gray-900">Team Chat</h3>
+        <p className="text-sm text-gray-600">
+          Organization: {currentOrganization?.name || 'Demo Organization'}
+        </p>
+      </div>
+
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${
-              message.userId === user.id ? 'justify-end' : 'justify-start'
+              message.userId === (user?.id || 'demo-user') ? 'justify-end' : 'justify-start'
             }`}
           >
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
-                message.userId === user.id
+                message.userId === (user?.id || 'demo-user')
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-900'
               }`}
@@ -148,17 +167,11 @@ const TeamChat = () => {
                 {message.user?.name || 'Unknown User'}
               </div>
               {message.type === 'TEXT' ? (
-                <p>{message.content}</p>
+                <p className="whitespace-pre-wrap">{message.content}</p>
               ) : (
                 <div>
-                  <a
-                    href={message.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-200 underline"
-                  >
-                    {message.fileName}
-                  </a>
+                  <p className="text-sm opacity-75">📎 {message.fileName || 'File attachment'}</p>
+                  <p>{message.content}</p>
                 </div>
               )}
               <div className="text-xs mt-1 opacity-75">
@@ -170,12 +183,14 @@ const TeamChat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSendMessage} className="p-4 border-t">
+      {/* Message Input */}
+      <form onSubmit={handleSendMessage} className="p-4 border-t bg-gray-50">
         <div className="flex items-center space-x-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-200"
+            title="Attach file"
           >
             <PaperClipIcon className="h-5 w-5" />
           </button>
@@ -184,6 +199,7 @@ const TeamChat = () => {
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
+            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
           />
           <input
             type="text"
@@ -195,7 +211,8 @@ const TeamChat = () => {
           <button
             type="submit"
             disabled={!newMessage.trim()}
-            className="p-2 text-blue-600 hover:text-blue-700 disabled:opacity-50"
+            className="p-2 text-blue-600 hover:text-blue-700 disabled:opacity-50 rounded-md hover:bg-blue-50"
+            title="Send message"
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>

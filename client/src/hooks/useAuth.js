@@ -11,37 +11,15 @@ import {
 } from '../store/slices/authSlice'
 
 export const useAuth = () => {
-  const dispatch = useDispatch()
-  const user = useSelector(selectUser)
-  const token = useSelector(selectToken)
-  const isAuthenticated = useSelector(selectIsAuthenticated)
-  const loading = useSelector(selectAuthLoading)
-  const error = useSelector(selectAuthError)
-
-  // Check if user is authenticated on mount
-  useEffect(() => {
-    if (token && !user) {
-      dispatch(getCurrentUser())
-    }
-  }, [dispatch, token, user])
-
-  // Clear error when component unmounts
-  useEffect(() => {
-    return () => {
-      if (error) {
-        dispatch(clearError())
-      }
-    }
-  }, [dispatch, error])
-
+  const auth = useSelector((state) => state.auth);
+  
   return {
-    user,
-    token,
-    isAuthenticated,
-    loading,
-    error,
-    clearError: () => dispatch(clearError()),
-  }
+    user: auth.user,
+    token: auth.token,
+    loading: auth.loading,
+    error: auth.error,
+    isAuthenticated: !!auth.user && !!auth.token
+  };
 }
 
 // Hook for checking user permissions

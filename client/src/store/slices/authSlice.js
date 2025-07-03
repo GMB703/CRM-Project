@@ -7,6 +7,7 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(credentials)
+      // response is {success: true, data: {user, token, organization}}
       return response.data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed')
@@ -43,6 +44,7 @@ export const getCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await authAPI.getCurrentUser()
+      // response is {success: true, data: {...user data...}}
       return response.data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to get user')
@@ -157,7 +159,7 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload
+        state.user = action.payload  // action.payload is the user data directly
         state.isAuthenticated = true
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
@@ -187,6 +189,11 @@ const authSlice = createSlice({
 
 // Export actions
 export const { clearError, setToken, updateUser } = authSlice.actions
+
+// Export async thunks with alternative names for compatibility
+export const loginUser = login
+export const registerUser = register
+export const logoutUser = logout
 
 // Export selectors
 export const selectAuth = (state) => state.auth
