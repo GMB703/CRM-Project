@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../../services/authAPI';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { resetPassword } from "../../services/authAPI";
+import toast from "react-hot-toast";
 
 const ResetPassword = () => {
   const { token } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: ''
+    password: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error("Passwords do not match");
       return;
     }
 
     setLoading(true);
 
     try {
-      await authAPI.resetPassword(token, formData.password);
-      toast.success('Password reset successful!');
-      navigate('/login');
+      await resetPassword(token, formData.password);
+      toast.success("Password reset successful!");
+      navigate("/login");
     } catch (error) {
-      toast.error(error.message || 'Failed to reset password');
+      toast.error(error.response?.data?.message || "Failed to reset password");
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,10 @@ const ResetPassword = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 New Password
               </label>
               <input
@@ -69,7 +72,10 @@ const ResetPassword = () => {
               />
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm New Password
               </label>
               <input
@@ -91,7 +97,7 @@ const ResetPassword = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {loading ? 'Resetting...' : 'Reset password'}
+              {loading ? "Resetting..." : "Reset password"}
             </button>
           </div>
 
@@ -109,4 +115,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export { ResetPassword };

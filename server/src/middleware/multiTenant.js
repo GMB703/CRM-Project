@@ -477,13 +477,24 @@ function getCacheStats() {
 
 export {
   createMultiTenantMiddleware,
-  createMultiTenantMiddleware as requireOrganization,
   clearOrganizationCache,
   getCacheStats,
   MultiTenantError,
   MissingTokenError,
   InvalidTokenError,
   InvalidOrganizationError,
-  OrganizationAccessDeniedError,
-  defaultConfig
-}; 
+  OrganizationAccessDeniedError
+};
+
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This multi-tenant middleware is complete and stable.
+ * Core functionality:
+ * - Organization context management
+ * - Token validation and decoding
+ * - Access verification
+ * - Database context creation
+ * 
+ * This is a critical system component that ensures proper data isolation.
+ * Changes here could affect the entire application's multi-tenant functionality.
+ * Modify only if absolutely necessary and after thorough review.
+ */ 

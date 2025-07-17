@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import OrganizationSelector from './OrganizationSelector'
+import React, { useState, useEffect } from "react";
+import { OrganizationSelector } from "./OrganizationSelector.jsx";
 
 /**
  * OrganizationHandler Component
@@ -7,57 +7,68 @@ import OrganizationSelector from './OrganizationSelector'
  * and displays appropriate UI components
  */
 const OrganizationHandler = () => {
-  const [showSelector, setShowSelector] = useState(false)
-  const [availableOrganizations, setAvailableOrganizations] = useState([])
-  const [showAccessDenied, setShowAccessDenied] = useState(false)
-  const [accessDeniedMessage, setAccessDeniedMessage] = useState('')
+  const [showSelector, setShowSelector] = useState(false);
+  const [availableOrganizations, setAvailableOrganizations] = useState([]);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState("");
 
   useEffect(() => {
     // Listen for organization selection required event
     const handleOrganizationSelectionRequired = (event) => {
-      console.log('Organization selection required:', event.detail)
-      setAvailableOrganizations(event.detail.organizations || [])
-      setShowSelector(true)
-    }
+      setAvailableOrganizations(event.detail.organizations || []);
+      setShowSelector(true);
+    };
 
     // Listen for organization access denied event
     const handleOrganizationAccessDenied = (event) => {
-      console.log('Organization access denied:', event.detail)
-      setAccessDeniedMessage(event.detail.message || 'Access to this organization is denied.')
-      setShowAccessDenied(true)
-    }
+      setAccessDeniedMessage(
+        event.detail.message || "Access to this organization is denied.",
+      );
+      setShowAccessDenied(true);
+    };
 
     // Add event listeners
-    window.addEventListener('organizationSelectionRequired', handleOrganizationSelectionRequired)
-    window.addEventListener('organizationAccessDenied', handleOrganizationAccessDenied)
+    window.addEventListener(
+      "organizationSelectionRequired",
+      handleOrganizationSelectionRequired,
+    );
+    window.addEventListener(
+      "organizationAccessDenied",
+      handleOrganizationAccessDenied,
+    );
 
     // Cleanup event listeners
     return () => {
-      window.removeEventListener('organizationSelectionRequired', handleOrganizationSelectionRequired)
-      window.removeEventListener('organizationAccessDenied', handleOrganizationAccessDenied)
-    }
-  }, [])
+      window.removeEventListener(
+        "organizationSelectionRequired",
+        handleOrganizationSelectionRequired,
+      );
+      window.removeEventListener(
+        "organizationAccessDenied",
+        handleOrganizationAccessDenied,
+      );
+    };
+  }, []);
 
   const handleOrganizationSelect = (orgId) => {
-    console.log('Organization selected:', orgId)
-    setShowSelector(false)
-    setAvailableOrganizations([])
+    setShowSelector(false);
+    setAvailableOrganizations([]);
     // The switchOrganization call in OrganizationSelector will handle the rest
-  }
+  };
 
   const handleSelectorCancel = () => {
-    setShowSelector(false)
-    setAvailableOrganizations([])
+    setShowSelector(false);
+    setAvailableOrganizations([]);
     // Optionally redirect to login or show a message
-    window.location.href = '/login'
-  }
+    window.location.href = "/login";
+  };
 
   const handleAccessDeniedClose = () => {
-    setShowAccessDenied(false)
-    setAccessDeniedMessage('')
+    setShowAccessDenied(false);
+    setAccessDeniedMessage("");
     // Optionally redirect to login or dashboard
-    window.location.href = '/login'
-  }
+    window.location.href = "/login";
+  };
 
   return (
     <>
@@ -78,9 +89,7 @@ const OrganizationHandler = () => {
               <h2 className="text-xl font-semibold text-red-600 mb-2">
                 Access Denied
               </h2>
-              <p className="text-gray-600">
-                {accessDeniedMessage}
-              </p>
+              <p className="text-gray-600">{accessDeniedMessage}</p>
             </div>
 
             <div className="flex justify-end">
@@ -95,7 +104,7 @@ const OrganizationHandler = () => {
         </div>
       )}
     </>
-  )
-}
+  );
+};
 
-export default OrganizationHandler 
+export { OrganizationHandler };

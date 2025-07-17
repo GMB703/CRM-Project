@@ -1,22 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import api from '../services/api';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { api } from "../services/api";
+import toast from "react-hot-toast";
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    notes: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    notes: "",
   });
   const { token } = useSelector((state) => state.auth);
 
@@ -28,15 +33,15 @@ const Customers = () => {
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/clients');
+      const response = await api.get("/clients");
       if (response.data?.success) {
         setCustomers(response.data.data || []);
       } else {
         setCustomers(response.data || []);
       }
     } catch (error) {
-      console.error('Error loading customers:', error);
-      toast.error('Failed to load customers');
+      console.error("Error loading customers:", error);
+      toast.error("Failed to load customers");
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -45,12 +50,12 @@ const Customers = () => {
 
   const handleAddCustomer = () => {
     setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      notes: ''
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      notes: "",
     });
     setEditingCustomer(null);
     setShowAddForm(true);
@@ -58,69 +63,69 @@ const Customers = () => {
 
   const handleEditCustomer = (customer) => {
     setFormData({
-      firstName: customer.firstName || '',
-      lastName: customer.lastName || '',
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
-      notes: customer.notes || ''
+      firstName: customer.firstName || "",
+      lastName: customer.lastName || "",
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || "",
+      notes: customer.notes || "",
     });
     setEditingCustomer(customer);
     setShowAddForm(true);
   };
 
   const handleDeleteCustomer = async (customerId) => {
-    if (!window.confirm('Are you sure you want to delete this customer?')) {
+    if (!window.confirm("Are you sure you want to delete this customer?")) {
       return;
     }
 
     try {
       await api.delete(`/clients/${customerId}`);
-      toast.success('Customer deleted successfully');
+      toast.success("Customer deleted successfully");
       loadCustomers();
     } catch (error) {
-      console.error('Error deleting customer:', error);
-      toast.error('Failed to delete customer');
+      console.error("Error deleting customer:", error);
+      toast.error("Failed to delete customer");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       if (editingCustomer) {
         // Update existing customer
         await api.put(`/clients/${editingCustomer.id}`, formData);
-        toast.success('Customer updated successfully');
+        toast.success("Customer updated successfully");
       } else {
         // Create new customer
-        await api.post('/clients', formData);
-        toast.success('Customer added successfully');
+        await api.post("/clients", formData);
+        toast.success("Customer added successfully");
       }
-      
+
       setShowAddForm(false);
       setEditingCustomer(null);
       loadCustomers();
     } catch (error) {
-      console.error('Error saving customer:', error);
-      toast.error(`Failed to ${editingCustomer ? 'update' : 'add'} customer`);
+      console.error("Error saving customer:", error);
+      toast.error(`Failed to ${editingCustomer ? "update" : "add"} customer`);
     }
   };
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
-  const filteredCustomers = customers.filter(customer => {
+  const filteredCustomers = customers.filter((customer) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      (customer.firstName?.toLowerCase() || '').includes(searchLower) ||
-      (customer.lastName?.toLowerCase() || '').includes(searchLower) ||
-      (customer.email?.toLowerCase() || '').includes(searchLower) ||
-      (customer.phone || '').includes(searchTerm)
+      (customer.firstName?.toLowerCase() || "").includes(searchLower) ||
+      (customer.lastName?.toLowerCase() || "").includes(searchLower) ||
+      (customer.email?.toLowerCase() || "").includes(searchLower) ||
+      (customer.phone || "").includes(searchTerm)
     );
   });
 
@@ -175,15 +180,27 @@ const Customers = () => {
           ) : filteredCustomers.length === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto h-12 w-12 text-gray-400">
-                <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <svg
+                  className="h-12 w-12"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
                 </svg>
               </div>
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                {searchTerm ? 'No customers found' : 'No customers'}
+                {searchTerm ? "No customers found" : "No customers"}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? 'Try adjusting your search terms.' : 'Get started by adding your first customer.'}
+                {searchTerm
+                  ? "Try adjusting your search terms."
+                  : "Get started by adding your first customer."}
               </p>
               {!searchTerm && (
                 <div className="mt-6">
@@ -229,25 +246,29 @@ const Customers = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{customer.email}</div>
+                        <div className="text-sm text-gray-900">
+                          {customer.email}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{customer.phone || '-'}</div>
+                        <div className="text-sm text-gray-900">
+                          {customer.phone || "-"}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {customer.address || '-'}
+                          {customer.address || "-"}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
+                        <button
                           onClick={() => handleEditCustomer(customer)}
                           className="text-indigo-600 hover:text-indigo-900 mr-4 inline-flex items-center"
                         >
                           <PencilIcon className="h-4 w-4 mr-1" />
                           Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteCustomer(customer.id)}
                           className="text-red-600 hover:text-red-900 inline-flex items-center"
                         >
@@ -270,7 +291,7 @@ const Customers = () => {
           <div className="relative top-20 mx-auto p-5 border max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
+                {editingCustomer ? "Edit Customer" : "Add New Customer"}
               </h3>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
@@ -361,7 +382,7 @@ const Customers = () => {
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    {editingCustomer ? 'Update Customer' : 'Add Customer'}
+                    {editingCustomer ? "Update Customer" : "Add Customer"}
                   </button>
                 </div>
               </form>
@@ -373,4 +394,4 @@ const Customers = () => {
   );
 };
 
-export default Customers; 
+export { Customers };

@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectIsAuthenticated } from '../../store/slices/authSlice';
-import { useOrganization } from '../../contexts/OrganizationContext';
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import {
+  selectCurrentUser,
+  selectIsAuthenticated,
+} from "../../store/slices/authSlice";
+import { useOrganization } from "../../contexts/OrganizationContext.jsx";
+import { LoadingSpinner } from "../UI/LoadingSpinner.jsx";
 import {
   Box,
   Grid,
@@ -16,16 +20,18 @@ import {
   TableRow,
   Paper,
   Button,
-  Alert
-} from '@mui/material';
+  Alert,
+} from "@mui/material";
+import PeopleIcon from "@mui/icons-material/People";
+import BusinessIcon from "@mui/icons-material/Business";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
 import {
-  People as PeopleIcon,
-  Business as BusinessIcon,
-  Assignment as AssignmentIcon,
-  Analytics as AnalyticsIcon
-} from '@mui/icons-material';
-import LoadingSpinner from '../UI/LoadingSpinner';
-import api from '../../services/api';
+  getDashboardOverview,
+  getPipeline,
+  getRevenueAnalytics,
+  getTaskAnalytics,
+} from "../../services/api";
 
 const AdminDashboard = () => {
   const user = useSelector(selectCurrentUser);
@@ -37,7 +43,7 @@ const AdminDashboard = () => {
     totalUsers: 0,
     totalProjects: 0,
     totalClients: 0,
-    recentUsers: []
+    recentUsers: [],
   });
 
   useEffect(() => {
@@ -45,20 +51,20 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Wait for auth data to be ready
         if (!isAuthenticated || !user) {
-          throw new Error('Authentication required');
+          throw new Error("Authentication required");
         }
 
         // Check if user has admin access
-        if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
-          throw new Error('Admin access required');
+        if (user.role !== "ADMIN" && user.role !== "OWNER") {
+          throw new Error("Admin access required");
         }
 
         // Fetch dashboard data
-        await fetchDashboardStats();
-        
+        await fetchDashboardData();
+
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -69,35 +75,37 @@ const AdminDashboard = () => {
     initializeDashboard();
   }, [isAuthenticated, user]);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      // Fetch basic organization stats
-      const [usersResponse, projectsResponse, clientsResponse] = await Promise.allSettled([
-        api.get('/admin/users'),
-        api.get('/admin/projects'),
-        api.get('/admin/clients')
+      const [overview, pipeline, revenue, tasks] = await Promise.all([
+        getDashboardOverview(),
+        getPipeline(),
+        getRevenueAnalytics(),
+        getTaskAnalytics(),
       ]);
 
       setStats({
-        totalUsers: usersResponse.status === 'fulfilled' ? usersResponse.value.data?.length || 0 : 0,
-        totalProjects: projectsResponse.status === 'fulfilled' ? projectsResponse.value.data?.length || 0 : 0,
-        totalClients: clientsResponse.status === 'fulfilled' ? clientsResponse.value.data?.length || 0 : 0,
-        recentUsers: usersResponse.status === 'fulfilled' ? usersResponse.value.data?.slice(0, 5) || [] : []
+        totalUsers: overview.data?.totalUsers || 0,
+        totalProjects: overview.data?.totalProjects || 0,
+        totalClients: overview.data?.totalClients || 0,
+        recentUsers: overview.data?.recentUsers || [],
       });
     } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error);
+      console.error("Failed to fetch dashboard stats:", error);
       // Set default values if fetch fails
       setStats({
         totalUsers: 0,
         totalProjects: 0,
         totalClients: 0,
-        recentUsers: []
+        recentUsers: [],
       });
     }
   };
 
   const StatCard = ({ title, value, icon: Icon, color }) => (
-    <Card sx={{ height: '100%', cursor: 'pointer', '&:hover': { boxShadow: 3 } }}>
+    <Card
+      sx={{ height: "100%", cursor: "pointer", "&:hover": { boxShadow: 3 } }}
+    >
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box>
@@ -116,7 +124,12 @@ const AdminDashboard = () => {
 
   if (loading || orgLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="50vh"
+      >
         <LoadingSpinner size="lg" />
       </Box>
     );
@@ -130,10 +143,12 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'OWNER')) {
+  if (!user || (user.role !== "ADMIN" && user.role !== "OWNER")) {
     return (
       <Box p={3}>
-        <Alert severity="error">Access denied. Admin privileges required.</Alert>
+        <Alert severity="error">
+          Access denied. Admin privileges required.
+        </Alert>
       </Box>
     );
   }
@@ -143,9 +158,10 @@ const AdminDashboard = () => {
       <Typography variant="h4" gutterBottom>
         Admin Dashboard
       </Typography>
-      
+
       <Typography variant="body1" color="textSecondary" paragraph>
-        Welcome, {user.firstName} {user.lastName} | Organization: {currentOrganization?.name || 'Not selected'}
+        Welcome, {user.firstName} {user.lastName} | Organization:{" "}
+        {currentOrganization?.name || "Not selected"}
       </Typography>
 
       {/* Stats Overview */}
@@ -189,13 +205,18 @@ const AdminDashboard = () => {
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
                 <Typography variant="h6">Recent Users</Typography>
                 <Button variant="outlined" color="primary">
                   Manage Users
                 </Button>
               </Box>
-              
+
               {stats.recentUsers.length > 0 ? (
                 <TableContainer component={Paper} variant="outlined">
                   <Table>
@@ -216,10 +237,14 @@ const AdminDashboard = () => {
                           <TableCell>{user.email}</TableCell>
                           <TableCell>{user.role}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                              {user.isActive ? 'Active' : 'Inactive'}
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                user.isActive
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {user.isActive ? "Active" : "Inactive"}
                             </span>
                           </TableCell>
                         </TableRow>
@@ -229,7 +254,8 @@ const AdminDashboard = () => {
                 </TableContainer>
               ) : (
                 <Typography color="textSecondary">
-                  No users found. Users will appear here once they are added to your organization.
+                  No users found. Users will appear here once they are added to
+                  your organization.
                 </Typography>
               )}
             </CardContent>
@@ -267,4 +293,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard; 
+export { AdminDashboard };

@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Organization {
-  id                       String                    @id @default(cuid())
+  id                       String                    @id @default(uuid())
   name                     String
   code                     String                    @unique
   logo                     String?
@@ -17,66 +17,65 @@ model Organization {
   isActive                 Boolean                   @default(true)
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
-  users                    User[]
-  clients                  Client[]
-  projects                 Project[]
-  estimates                Estimate[]
-  estimateTemplates        EstimateTemplate[]
-  userOrganizations        UserOrganization[]
-  organizationSettings     OrganizationSettings?
   catalogItems             CatalogItem[]
+  customFields             CustomField[]
+  estimates                Estimate[]
   estimateLineItems        EstimateLineItem[]
   estimatePayments         EstimatePayment[]
-  leadStages               LeadStage[]
-  leadSourceConfigs        LeadSourceConfig[]
-  leadActivities           LeadActivity[]
-  messageTemplates         MessageTemplate[]
-  communicationChannels    CommunicationChannel[]
-  messageHistory           MessageHistory[]
+  formLayouts              FormLayout[]
+  organizationSettings     OrganizationSettings?
+  workflowTemplates        WorkflowTemplate[]
+  analyticsMetrics         AnalyticsMetric[]
+  auditLogs                AuditLog[]
+  clients                  Client[]
   communicationAutomations CommunicationAutomation[]
+  communicationChannels    CommunicationChannel[]
+  estimateTemplates        EstimateTemplate[]
+  leadActivities           LeadActivity[]
+  leadSourceConfigs        LeadSourceConfig[]
+  leadStages               LeadStage[]
+  messageHistory           MessageHistory[]
+  messageTemplates         MessageTemplate[]
+  projects                 Project[]
+  reportTemplates          ReportTemplate[]
+  userOrganizations        UserOrganization[]
+  users                    User[]
 
   @@map("organizations")
 }
 
 model OrganizationSettings {
-  id             String       @id @default(cuid())
-  organizationId String       @unique
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  // Theme settings
-  primaryColor   String? @default("#1976d2")
-  secondaryColor String? @default("#dc004e")
-  accentColor    String? @default("#f50057")
-  logoUrl        String?
-  faviconUrl     String?
-
-  // Branding settings
-  companyName  String?
-  contactEmail String?
-  contactPhone String?
-  address      Json?
-
-  // Feature flags
-  enabledFeatures Json? @default("[\"crm\", \"projects\"]")
-
-  // UI preferences
-  sidebarCollapsed Boolean? @default(false)
-  darkMode         Boolean? @default(false)
-  language         String?  @default("en")
-  timezone         String?  @default("UTC")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("organization_settings")
+  id                String       @id @default(uuid())
+  organizationId    String       @unique
+  defaultCurrency   String       @default("USD")
+  defaultTimeZone   String       @default("UTC")
+  defaultDateFormat String       @default("YYYY-MM-DD")
+  defaultLanguage   String       @default("en")
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  primaryColor      String?      @default("#1976d2")
+  secondaryColor    String?      @default("#dc004e")
+  accentColor       String?      @default("#f50057")
+  logoUrl           String?
+  faviconUrl        String?
+  companyName       String?
+  contactEmail      String?
+  contactPhone      String?
+  address           Json?
+  enabledFeatures   Json?        @default("[\"crm\", \"projects\"]")
+  sidebarCollapsed  Boolean?     @default(false)
+  darkMode          Boolean?     @default(false)
+  language          String?      @default("en")
+  timezone          String?      @default("UTC")
+  organization      Organization @relation(fields: [organizationId], references: [id])
 }
 
 model User {
-  id                      String                    @id @default(cuid())
-  email                   String
+  id                      String                    @id @default(uuid())
+  email                   String                    @unique
   password                String
-  firstName               String
-  lastName                String
+  firstName               String?
+  lastName                String?
   phone                   String?
   avatar                  String?
   role                    UserRole                  @default(USER)
@@ -85,29 +84,34 @@ model User {
   lastLoginAt             DateTime?
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
-  organizationId          String
-  organization            Organization              @relation(fields: [organizationId], references: [id])
-  userOrganizations       UserOrganization[]
+  organizationId          String?
+  activityLogs            ActivityLog[]
+  catalogItems            CatalogItem[]
   clientPortalMessages    ClientPortalMessage[]
-  teamChatMessages        TeamChatMessage[]
-  communications          Communication[]
-  estimates               Estimate[]                @relation("EstimateCreator")
   approvedEstimates       Estimate[]                @relation("EstimateApprover")
+  estimates               Estimate[]                @relation("EstimateCreator")
+  estimateApprovals       EstimateApproval[]
+  estimateEmailLogs       EstimateEmailLog[]
+  userRoleAssignments     UserRoleAssignment[]
+  userPermissionGrants    UserPermissionGrant[]
+  teamChatMessages        TeamChatMessage[]
+  auditLogs               AuditLog[]
+  assignedLeads           Client[]                  @relation("LeadAssignee")
+  createdAutomations      CommunicationAutomation[] @relation("AutomationCreator")
+  communications          Communication[]
   estimateTemplates       EstimateTemplate[]
   invoices                Invoice[]
+  leadActivities          LeadActivity[]            @relation("LeadActivityUser")
+  sentMessages            MessageHistory[]          @relation("MessageSender")
+  createdMessageTemplates MessageTemplate[]         @relation("MessageTemplateCreator")
   notes                   Note[]
   notifications           Notification[]
   createdProjects         Project[]                 @relation("ProjectCreator")
+  createdReportTemplates  ReportTemplate[]          @relation("ReportTemplateCreator")
   assignedTasks           Task[]
+  userOrganizations       UserOrganization[]
+  organization            Organization?             @relation(fields: [organizationId], references: [id])
   assignedProjects        Project[]                 @relation("ProjectAssignee")
-  assignedLeads           Client[]                  @relation("LeadAssignee")
-  leadActivities          LeadActivity[]            @relation("LeadActivityUser")
-  catalogItems            CatalogItem[]
-  estimateApprovals       EstimateApproval[]
-  estimateEmailLogs       EstimateEmailLog[]
-  createdMessageTemplates MessageTemplate[]         @relation("MessageTemplateCreator")
-  sentMessages            MessageHistory[]          @relation("MessageSender")
-  createdAutomations      CommunicationAutomation[] @relation("AutomationCreator")
 
   @@unique([email, organizationId])
   @@index([organizationId])
@@ -126,8 +130,8 @@ model UserOrganization {
   joinedAt       DateTime         @default(now())
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
   @@index([userId])
@@ -152,6 +156,9 @@ model Client {
   tags                 String[]
   status               ClientStatus          @default(ACTIVE)
   noteText             String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  organizationId       String
   leadStage            String?
   assignedUserId       String?
   leadScore            Int?
@@ -160,17 +167,17 @@ model Client {
   convertedAt          DateTime?
   estimatedValue       Decimal?              @db.Decimal(10, 2)
   actualValue          Decimal?              @db.Decimal(10, 2)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  organizationId       String
-  organization         Organization          @relation(fields: [organizationId], references: [id])
-  assignedUser         User?                 @relation("LeadAssignee", fields: [assignedUserId], references: [id])
-  leadActivities       LeadActivity[]
+  inactivityThreshold  Int?                  @default(7)
+  reminderFrequency    Int?                  @default(1)
+  lastReminderSentAt   DateTime?
   clientPortalMessages ClientPortalMessage[]
-  communications       Communication[]
-  messageHistory       MessageHistory[]
   estimates            Estimate[]
+  assignedUser         User?                 @relation("LeadAssignee", fields: [assignedUserId], references: [id])
+  organization         Organization          @relation(fields: [organizationId], references: [id])
+  communications       Communication[]
   invoices             Invoice[]
+  leadActivities       LeadActivity[]
+  messageHistory       MessageHistory[]
   notes                Note[]
   projects             Project[]
 
@@ -202,20 +209,20 @@ model Project {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   organizationId       String
-  organization         Organization          @relation(fields: [organizationId], references: [id])
   clientId             String
   creatorId            String
   clientPortalMessages ClientPortalMessage[]
+  estimates            Estimate[]
   teamChatMessages     TeamChatMessage[]
   changeOrders         ChangeOrder[]
   communications       Communication[]
-  messageHistory       MessageHistory[]
   documents            Document[]
-  estimates            Estimate[]
   invoices             Invoice[]
+  messageHistory       MessageHistory[]
   notes                Note[]
   client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   creator              User                  @relation("ProjectCreator", fields: [creatorId], references: [id])
+  organization         Organization          @relation(fields: [organizationId], references: [id])
   tasks                Task[]
   assignees            User[]                @relation("ProjectAssignee")
 
@@ -282,60 +289,46 @@ model TimeLog {
 }
 
 model Estimate {
-  id              String         @id @default(cuid())
-  referenceNumber String // ES-001, ES-002, etc.
-  title           String
-  description     String?
-  status          EstimateStatus @default(DRAFT)
-
-  // Relationships
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  clientId       String
-  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  projectId      String?
-  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  creatorId      String
-  creator        User         @relation("EstimateCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  approvedById   String?
-  approvedBy     User?        @relation("EstimateApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-
-  // Dates
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  expiresAt  DateTime?
-  approvedAt DateTime?
-  sentAt     DateTime?
-
-  // Financial
-  subtotal    Decimal @default(0) @db.Decimal(10, 2)
-  taxRate     Decimal @default(0) @db.Decimal(5, 2)
-  taxAmount   Decimal @default(0) @db.Decimal(10, 2)
-  totalAmount Decimal @default(0) @db.Decimal(10, 2)
-
-  // Settings
-  requiresApproval Boolean           @default(false)
-  isTemplate       Boolean           @default(false)
-  templateName     String?
-  templateId       String?
-  template         EstimateTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-
-  // File Storage
-  pdfPath        String?
-  pdfGeneratedAt DateTime?
-
-  // Payment
+  id                String             @id @default(cuid())
+  referenceNumber   String
+  title             String
+  description       String?
+  status            EstimateStatus     @default(DRAFT)
+  organizationId    String
+  clientId          String
+  projectId         String?
+  creatorId         String
+  approvedById      String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  expiresAt         DateTime?
+  approvedAt        DateTime?
+  sentAt            DateTime?
+  subtotal          Decimal            @default(0) @db.Decimal(10, 2)
+  taxRate           Decimal            @default(0) @db.Decimal(5, 2)
+  taxAmount         Decimal            @default(0) @db.Decimal(10, 2)
+  totalAmount       Decimal            @default(0) @db.Decimal(10, 2)
+  requiresApproval  Boolean            @default(false)
+  isTemplate        Boolean            @default(false)
+  templateName      String?
+  templateId        String?
+  pdfPath           String?
+  pdfGeneratedAt    DateTime?
   paymentTerms      String?
-  depositRequired   Boolean  @default(false)
-  depositAmount     Decimal? @db.Decimal(10, 2)
-  depositPercentage Decimal? @db.Decimal(5, 2)
-
-  // Related Data
-  lineItems EstimateLineItem[]
-  payments  EstimatePayment[]
-  approvals EstimateApproval[]
-  emailLogs EstimateEmailLog[]
-  contracts Contract[]
+  depositRequired   Boolean            @default(false)
+  depositAmount     Decimal?           @db.Decimal(10, 2)
+  depositPercentage Decimal?           @db.Decimal(5, 2)
+  approvedBy        User?              @relation("EstimateApprover", fields: [approvedById], references: [id])
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  creator           User               @relation("EstimateCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project?           @relation(fields: [projectId], references: [id])
+  template          EstimateTemplate?  @relation(fields: [templateId], references: [id])
+  approvals         EstimateApproval[]
+  emailLogs         EstimateEmailLog[]
+  lineItems         EstimateLineItem[]
+  payments          EstimatePayment[]
+  contracts         Contract[]
 
   @@unique([referenceNumber, organizationId])
   @@index([organizationId, status])
@@ -344,79 +337,55 @@ model Estimate {
 }
 
 model EstimateLineItem {
-  id         String   @id @default(cuid())
-  estimateId String
-  estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
-
-  // Item Details
-  itemName    String
-  description String?
-  sku         String?
-  category    String?
-  room        String?
-
-  // Pricing
-  quantity  Decimal @db.Decimal(10, 2)
-  unit      String  @default("ea")
-  unitCost  Decimal @db.Decimal(10, 2)
-  markup    Decimal @default(0) @db.Decimal(5, 2)
-  unitPrice Decimal @db.Decimal(10, 2)
-  lineTotal Decimal @db.Decimal(10, 2)
-
-  // Tax
-  taxable Boolean  @default(true)
-  taxRate Decimal? @db.Decimal(5, 2)
-
-  // Organization
+  id             String       @id @default(cuid())
+  estimateId     String
+  itemName       String
+  description    String?
+  sku            String?
+  category       String?
+  room           String?
+  quantity       Decimal      @db.Decimal(10, 2)
+  unit           String       @default("ea")
+  unitCost       Decimal      @db.Decimal(10, 2)
+  markup         Decimal      @default(0) @db.Decimal(5, 2)
+  unitPrice      Decimal      @db.Decimal(10, 2)
+  lineTotal      Decimal      @db.Decimal(10, 2)
+  taxable        Boolean      @default(true)
+  taxRate        Decimal?     @db.Decimal(5, 2)
   organizationId String
+  sortOrder      Int          @default(0)
+  catalogItemId  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  catalogItem    CatalogItem? @relation(fields: [catalogItemId], references: [id])
+  estimate       Estimate     @relation(fields: [estimateId], references: [id], onDelete: Cascade)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  // Ordering
-  sortOrder Int @default(0)
-
-  // Catalog Reference
-  catalogItemId String?
-  catalogItem   CatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([estimateId])
   @@index([catalogItemId])
 }
 
 model CatalogItem {
-  id             String       @id @default(cuid())
+  id             String             @id @default(cuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  // Item Details
-  name        String
-  description String?
-  sku         String?
-  category    String?
-
-  // Default Pricing
-  defaultCost   Decimal @db.Decimal(10, 2)
-  defaultMarkup Decimal @default(0) @db.Decimal(5, 2)
-  defaultPrice  Decimal @db.Decimal(10, 2)
-  unit          String  @default("ea")
-
-  // Settings
-  isActive Boolean @default(true)
-  taxable  Boolean @default(true)
-
-  // Usage Tracking
-  usageCount Int       @default(0)
-  lastUsed   DateTime?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdById String
-  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
-
-  // Relations
-  lineItems EstimateLineItem[]
+  name           String
+  description    String?
+  sku            String?
+  category       String?
+  defaultCost    Decimal            @db.Decimal(10, 2)
+  defaultMarkup  Decimal            @default(0) @db.Decimal(5, 2)
+  defaultPrice   Decimal            @db.Decimal(10, 2)
+  unit           String             @default("ea")
+  isActive       Boolean            @default(true)
+  taxable        Boolean            @default(true)
+  usageCount     Int                @default(0)
+  lastUsed       DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  createdById    String
+  createdBy      User               @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lineItems      EstimateLineItem[]
 
   @@unique([sku, organizationId])
   @@index([organizationId, category])
@@ -424,43 +393,33 @@ model CatalogItem {
 }
 
 model EstimateApproval {
-  id         String   @id @default(cuid())
-  estimateId String
-  estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
-
-  // Approval Details
+  id           String         @id @default(cuid())
+  estimateId   String
   status       ApprovalStatus
   comments     String?
   approvedById String
+  createdAt    DateTime       @default(now())
   approvedBy   User           @relation(fields: [approvedById], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  estimate     Estimate       @relation(fields: [estimateId], references: [id], onDelete: Cascade)
 
   @@index([estimateId])
 }
 
 model EstimatePayment {
-  id         String   @id @default(cuid())
-  estimateId String
-  estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
-
-  // Payment Details
-  amount      Decimal       @db.Decimal(10, 2)
-  paymentType PaymentType
-  status      PaymentStatus @default(PENDING)
-  dueDate     DateTime?
-  paidDate    DateTime?
-
-  // Payment Processing
+  id              String        @id @default(cuid())
+  estimateId      String
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentType     PaymentType
+  status          PaymentStatus @default(PENDING)
+  dueDate         DateTime?
+  paidDate        DateTime?
   stripePaymentId String?
   paymentMethod   String?
-
-  // Organization
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  organizationId  String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  estimate        Estimate      @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([estimateId])
   @@index([organizationId, status])
@@ -469,19 +428,15 @@ model EstimatePayment {
 model EstimateEmailLog {
   id         String   @id @default(cuid())
   estimateId String
+  toEmail    String
+  subject    String
+  sentAt     DateTime @default(now())
+  sentById   String
+  delivered  Boolean  @default(false)
+  opened     Boolean  @default(false)
+  clicked    Boolean  @default(false)
   estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
-
-  // Email Details
-  toEmail  String
-  subject  String
-  sentAt   DateTime @default(now())
-  sentById String
-  sentBy   User     @relation(fields: [sentById], references: [id], onDelete: Cascade)
-
-  // Status
-  delivered Boolean @default(false)
-  opened    Boolean @default(false)
-  clicked   Boolean @default(false)
+  sentBy     User     @relation(fields: [sentById], references: [id], onDelete: Cascade)
 
   @@index([estimateId])
 }
@@ -500,10 +455,10 @@ model EstimateTemplate {
   updatedAt      DateTime                   @updatedAt
   organizationId String
   creatorId      String
-  organization   Organization               @relation(fields: [organizationId], references: [id])
-  creator        User                       @relation(fields: [creatorId], references: [id])
   estimates      Estimate[]
   lineItems      EstimateTemplateLineItem[]
+  creator        User                       @relation(fields: [creatorId], references: [id])
+  organization   Organization               @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@index([organizationId, isActive])
@@ -743,108 +698,87 @@ model ClientPortalMessage {
   @@index([projectId])
 }
 
-// Lead Management Tables
 model LeadStage {
   id             String       @id @default(cuid())
-  name           String // e.g., "New Lead", "Contacted", "Qualified", "Proposal Sent"
+  name           String
   description    String?
-  color          String? // Hex color for UI display
-  order          Int // Display order in pipeline
-  isDefault      Boolean      @default(false)
+  color          String?      @default("#1976d2")
+  order          Int
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-  @@unique([name, organizationId])
+  @@unique([organizationId, name])
   @@index([organizationId])
-  @@index([organizationId, order])
-  @@index([organizationId, isActive])
   @@map("lead_stages")
 }
 
 model LeadSourceConfig {
   id             String       @id @default(cuid())
-  name           String // e.g., "Google Ads", "Facebook", "Trade Show", "Referral - John Smith"
+  name           String
   description    String?
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-  @@unique([name, organizationId])
+  @@unique([organizationId, name])
   @@index([organizationId])
-  @@index([organizationId, isActive])
   @@map("lead_source_configs")
 }
 
 model LeadActivity {
   id             String           @id @default(cuid())
-  type           LeadActivityType // CALL, EMAIL, MEETING, NOTE, STAGE_CHANGE, etc.
+  type           LeadActivityType
   title          String
   description    String?
-  notes          String?
-  outcome        String? // Call outcome, meeting result, etc.
-  nextAction     String? // What's the next planned action
-  scheduledAt    DateTime? // For scheduled activities
-  completedAt    DateTime? // When activity was completed
-  duration       Int? // Duration in minutes
-  isCompleted    Boolean          @default(false)
+  outcome        String?
+  nextAction     String?
+  duration       Int?
+  scheduledAt    DateTime?
+  completedAt    DateTime?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
-  clientId       String
-  userId         String // User who performed/recorded the activity
   organizationId String
-  client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId       String
+  userId         String
+  client         Client           @relation(fields: [clientId], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id])
   user           User             @relation("LeadActivityUser", fields: [userId], references: [id])
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   messageHistory MessageHistory[]
 
+  @@index([organizationId])
   @@index([clientId])
   @@index([userId])
-  @@index([organizationId])
-  @@index([organizationId, type])
-  @@index([organizationId, createdAt])
-  @@index([clientId, createdAt])
-  @@index([userId, createdAt])
+  @@index([type])
+  @@index([createdAt])
   @@map("lead_activities")
 }
 
-// Communication Hub Infrastructure
 model MessageTemplate {
-  id          String                  @id @default(cuid())
-  name        String // Template name for identification
-  description String? // What this template is for
-  category    MessageTemplateCategory // EMAIL_MARKETING, FOLLOW_UP, PROPOSAL, etc.
-  type        CommunicationType // EMAIL, SMS
-  isActive    Boolean                 @default(true)
-
-  // Template Content
-  subject  String? // For email templates
-  bodyText String // Plain text version
-  bodyHtml String? // Rich HTML version for emails
-
-  // Variables and Personalization
-  variables Json? // JSON array of available variables like {{firstName}}, {{companyName}}
-
-  // Usage Tracking
-  usageCount Int       @default(0)
-  lastUsedAt DateTime?
-
-  // Organization Context
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById    String
-  createdBy      User         @relation("MessageTemplateCreator", fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  messageHistory           MessageHistory[]
+  id                       String                    @id @default(cuid())
+  name                     String
+  description              String?
+  category                 MessageTemplateCategory
+  type                     CommunicationType
+  isActive                 Boolean                   @default(true)
+  subject                  String?
+  bodyText                 String
+  bodyHtml                 String?
+  variables                Json?
+  usageCount               Int                       @default(0)
+  lastUsedAt               DateTime?
+  organizationId           String
+  createdById              String
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
   communicationAutomations CommunicationAutomation[]
+  messageHistory           MessageHistory[]
+  createdBy                User                      @relation("MessageTemplateCreator", fields: [createdById], references: [id])
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([name, organizationId])
   @@index([organizationId])
@@ -855,32 +789,23 @@ model MessageTemplate {
 }
 
 model CommunicationChannel {
-  id        String            @id @default(cuid())
-  name      String // Channel name (e.g., "Primary Email", "SMS Alerts")
-  type      CommunicationType // EMAIL, SMS, PHONE
-  isActive  Boolean           @default(true)
-  isDefault Boolean           @default(false) // Default channel for this type
-
-  // Configuration
-  config   Json? // Channel-specific configuration (SMTP settings, SMS provider, etc.)
-  priority Int   @default(1) // Channel priority for failover
-
-  // Rate Limiting
-  dailyLimit     Int? // Max messages per day
-  monthlyLimit   Int? // Max messages per month
-  currentDaily   Int  @default(0) // Current daily usage
-  currentMonthly Int  @default(0) // Current monthly usage
-
-  // Organization Context
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  messageHistory           MessageHistory[]
+  id                       String                    @id @default(cuid())
+  name                     String
+  type                     CommunicationType
+  isActive                 Boolean                   @default(true)
+  isDefault                Boolean                   @default(false)
+  config                   Json?
+  priority                 Int                       @default(1)
+  dailyLimit               Int?
+  monthlyLimit             Int?
+  currentDaily             Int                       @default(0)
+  currentMonthly           Int                       @default(0)
+  organizationId           String
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
   communicationAutomations CommunicationAutomation[]
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messageHistory           MessageHistory[]
 
   @@unique([name, organizationId])
   @@index([organizationId])
@@ -891,60 +816,41 @@ model CommunicationChannel {
 }
 
 model MessageHistory {
-  id String @id @default(cuid())
-
-  // Message Content
-  subject  String? // Email subject or SMS title
-  bodyText String // Plain text content
-  bodyHtml String? // HTML content for emails
-
-  // Message Metadata
-  type      CommunicationType // EMAIL, SMS, PHONE
-  direction CommunicationDirection @default(OUTBOUND)
-  status    MessageStatus          @default(PENDING)
-
-  // Delivery Tracking
-  sentAt       DateTime?
-  deliveredAt  DateTime?
-  readAt       DateTime?
-  clickedAt    DateTime?
-  failedAt     DateTime?
-  errorMessage String?
-
-  // External Provider Data
-  externalId     String? // Provider message ID (Twilio, SendGrid, etc.)
-  externalStatus String? // Provider-specific status
-
-  // Template Reference
+  id                String                 @id @default(cuid())
+  subject           String?
+  bodyText          String
+  bodyHtml          String?
+  type              CommunicationType
+  direction         CommunicationDirection @default(OUTBOUND)
+  status            MessageStatus          @default(PENDING)
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  clickedAt         DateTime?
+  failedAt          DateTime?
+  errorMessage      String?
+  externalId        String?
+  externalStatus    String?
   templateId        String?
-  template          MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  templateVariables Json? // Variables used to populate template
-
-  // Channel Reference
-  channelId String?
-  channel   CommunicationChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
-
-  // Relationships
-  clientId       String?
-  client         Client?       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  projectId      String?
-  project        Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  leadActivityId String?
-  leadActivity   LeadActivity? @relation(fields: [leadActivityId], references: [id], onDelete: SetNull)
-
-  // User Context
-  userId         String? // User who sent the message
-  user           User?        @relation("MessageSender", fields: [userId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  // Contact Information
-  recipientEmail String?
-  recipientPhone String?
-  recipientName  String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  templateVariables Json?
+  channelId         String?
+  clientId          String?
+  projectId         String?
+  leadActivityId    String?
+  userId            String?
+  organizationId    String
+  recipientEmail    String?
+  recipientPhone    String?
+  recipientName     String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  channel           CommunicationChannel?  @relation(fields: [channelId], references: [id])
+  client            Client?                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  leadActivity      LeadActivity?          @relation(fields: [leadActivityId], references: [id])
+  organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project?               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  template          MessageTemplate?       @relation(fields: [templateId], references: [id])
+  user              User?                  @relation("MessageSender", fields: [userId], references: [id])
 
   @@index([organizationId])
   @@index([clientId])
@@ -959,37 +865,26 @@ model MessageHistory {
 }
 
 model CommunicationAutomation {
-  id          String  @id @default(cuid())
-  name        String // Automation name
-  description String?
-  isActive    Boolean @default(true)
-
-  // Trigger Configuration
-  triggerType   AutomationTriggerType // LEAD_CREATED, STAGE_CHANGE, TASK_DUE, etc.
-  triggerConfig Json? // Additional trigger configuration
-
-  // Conditions
-  conditions Json? // Conditions that must be met to execute
-
-  // Actions
-  templateId String? // Template to use
-  template   MessageTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  channelId  String? // Channel to use
-  channel    CommunicationChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
-  delay      Int                   @default(0) // Delay in minutes before sending
-
-  // Organization Context
+  id             String                @id @default(cuid())
+  name           String
+  description    String?
+  isActive       Boolean               @default(true)
+  triggerType    AutomationTriggerType
+  triggerConfig  Json?
+  conditions     Json?
+  templateId     String?
+  channelId      String?
+  delay          Int                   @default(0)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String
-  createdBy      User         @relation("AutomationCreator", fields: [createdById], references: [id])
-
-  // Usage Tracking
-  executionCount Int       @default(0)
+  executionCount Int                   @default(0)
   lastExecutedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  channel        CommunicationChannel? @relation(fields: [channelId], references: [id])
+  createdBy      User                  @relation("AutomationCreator", fields: [createdById], references: [id])
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template       MessageTemplate?      @relation(fields: [templateId], references: [id])
 
   @@unique([name, organizationId])
   @@index([organizationId])
@@ -998,10 +893,176 @@ model CommunicationAutomation {
   @@map("communication_automations")
 }
 
+// --- RBAC Enhancement: Role-based permissions ---
+model Role {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  description String?
+  userRoles   UserRoleAssignment[]
+  permissions RolePermission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String        @id @default(uuid())
+  module      String
+  action      String
+  description String?
+  rolePermissions RolePermission[]
+  userGrants  UserPermissionGrant[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  @@unique([roleId, permissionId])
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, roleId])
+}
+
+model UserPermissionGrant {
+  id           String     @id @default(uuid())
+  userId       String
+  permissionId String
+  user         User       @relation(fields: [userId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  @@unique([userId, permissionId])
+}
+// --- End RBAC Enhancement ---
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model CustomField {
+  id              String       @id @default(uuid())
+  organizationId  String
+  entityType      String
+  fieldName       String
+  fieldType       String
+  isRequired      Boolean      @default(false)
+  validationRules Json?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType, fieldName])
+}
+
+model FormLayout {
+  id             String       @id @default(uuid())
+  organizationId String
+  entityType     String
+  layout         Json
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType])
+}
+
+model WorkflowTemplate {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  triggers       Json
+  actions        Json
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model ReportTemplate {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  reportType     ReportType
+  config         Json
+  isDefault      Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  createdBy      String
+  creator        User         @relation("ReportTemplateCreator", fields: [createdBy], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, reportType])
+  @@index([organizationId, isActive])
+  @@map("report_templates")
+}
+
+model AnalyticsMetric {
+  id             String              @id @default(uuid())
+  metricKey      String
+  metricName     String
+  metricValue    Decimal             @db.Decimal(15, 4)
+  metricType     AnalyticsMetricType
+  dimension      String?
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  calculatedAt   DateTime            @default(now())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, metricKey, dimension, periodStart])
+  @@index([organizationId])
+  @@index([organizationId, metricType])
+  @@index([organizationId, periodStart])
+  @@map("analytics_metrics")
+}
+
+model AuditLog {
+  id             String        @id @default(uuid())
+  userId         String?
+  organizationId String?
+  action         String
+  targetType     String?
+  targetId       String?
+  details        Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
 enum UserRole {
   SUPER_ADMIN
-  ADMIN
-  MANAGER
+  ORG_ADMIN
   USER
   VIEWER
 }
@@ -1018,11 +1079,11 @@ enum LeadSource {
 enum ClientStatus {
   ACTIVE
   INACTIVE
-  PROSPECT // For leads not yet converted
-  QUALIFIED // Qualified leads ready for proposal
-  CONVERTED // Successfully converted to client
-  LOST // Lost lead/opportunity
-  UNQUALIFIED // Lead that didn't meet criteria
+  PROSPECT
+  LOST
+  QUALIFIED
+  CONVERTED
+  UNQUALIFIED
 }
 
 enum ProjectStatus {
@@ -1063,13 +1124,13 @@ enum TaskStatus {
 
 enum EstimateStatus {
   DRAFT
-  PENDING_APPROVAL
-  APPROVED
   SENT
-  VIEWED
   ACCEPTED
   REJECTED
   EXPIRED
+  PENDING_APPROVAL
+  APPROVED
+  VIEWED
   CONVERTED
 }
 
@@ -1148,6 +1209,7 @@ enum NotificationType {
   ESTIMATE_REJECTED
   PAYMENT_RECEIVED
   SYSTEM_ALERT
+  INACTIVITY_REMINDER
 }
 
 enum ChatMessageType {
@@ -1192,12 +1254,12 @@ enum LeadActivityType {
   MEETING
   NOTE
   STAGE_CHANGE
-  TASK
   DEMO
   QUOTE_SENT
   FOLLOW_UP
   CONVERSION
   OTHER
+  TASK
 }
 
 enum MessageTemplateCategory {
@@ -1232,18 +1294,37 @@ enum MessageStatus {
 
 enum AutomationTriggerType {
   LEAD_CREATED
-  LEAD_STAGE_CHANGE
+  LEAD_STAGE_CHANGED
   LEAD_ASSIGNED
-  PROJECT_CREATED
-  PROJECT_STATUS_CHANGE
-  TASK_DUE
+  FOLLOW_UP_DUE
+  LEAD_INACTIVE
+  PROJECT_STATUS_CHANGED
   ESTIMATE_SENT
   ESTIMATE_VIEWED
-  ESTIMATE_ACCEPTED
-  ESTIMATE_REJECTED
+  ESTIMATE_APPROVED
+  ESTIMATE_EXPIRED
   INVOICE_SENT
-  INVOICE_OVERDUE
   PAYMENT_RECEIVED
   CUSTOM_DATE
-  INACTIVITY_PERIOD
+  CUSTOM_FIELD_CHANGED
+}
+
+enum ReportType {
+  LEAD_PIPELINE
+  LEAD_CONVERSION
+  REVENUE_ANALYTICS
+  USER_PERFORMANCE
+  PROJECT_ANALYTICS
+  ESTIMATE_ANALYTICS
+  COMMUNICATION_METRICS
+  CUSTOM_REPORT
+}
+
+enum AnalyticsMetricType {
+  COUNT
+  SUM
+  AVERAGE
+  PERCENTAGE
+  RATIO
+  GROWTH_RATE
 }

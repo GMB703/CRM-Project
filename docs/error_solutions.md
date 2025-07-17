@@ -191,6 +191,33 @@ import { Spinner } from '../ui/Spinner';
 - Maintain a UI component inventory
 - Use consistent import paths for UI components
 
+### Issue: Invalid Material-UI Component Import
+**Error**: `Uncaught SyntaxError: The requested module '/node_modules/.vite/deps/@mui_material.js?v=5d68e21b' does not provide an export named 'TableHeader'`
+
+**Root Cause**: Attempting to import a non-existent component (`TableHeader`) from Material-UI library
+
+**Solution**: Use the correct Material-UI component names
+```javascript
+// ✅ CORRECT
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,  // Correct component name
+  TableRow,
+} from '@mui/material';
+
+// ❌ WRONG
+import {
+  TableHeader,  // This component doesn't exist
+} from '@mui/material';
+```
+
+**Prevention**:
+- Always verify component names in the Material-UI documentation
+- Use code completion/IntelliSense to check available exports
+- Keep Material-UI dependencies up to date
+
 ---
 
 ## Authentication Issues
@@ -296,6 +323,197 @@ export default api;
 - Always wrap app with required providers
 - Test provider hierarchy after any routing changes
 - Document provider dependencies
+
+---
+
+## API Routing and Authentication
+
+### Issue: Authentication Endpoint Mismatch
+**Error**: `POST http://localhost:3001/api/auth/login 404 (Not Found)`
+
+**Root Cause**: 
+1. Server mounts auth routes at `/auth` (without `/api` prefix)
+2. Client was incorrectly adding `/api` prefix to auth endpoints
+3. Vite proxy already handles `/api` prefix routing
+
+**Solution**:
+```javascript
+// ✅ CORRECT - Auth endpoints without /api prefix
+export const login = async (credentials) => {
+  const response = await api.post('/auth/login', credentials);
+  return response.data;
+};
+
+// ❌ WRONG - Don't add /api prefix to auth endpoints
+export const login = async (credentials) => {
+  const response = await api.post('/api/auth/login', credentials);
+  return response.data;
+};
+```
+
+**Server Route Configuration**:
+```javascript
+// server/src/index.js
+// Auth routes mounted without /api prefix
+app.use('/auth', authRoutes);
+
+// Other routes with /api prefix
+app.use('/api/leads', isAuthenticated, leadRoutes);
+app.use('/api/organizations', isAuthenticated, organizationRoutes);
+```
+
+**Prevention**:
+1. Check server route mounting in `index.js` before modifying API endpoints
+2. Auth routes are special - mounted at `/auth` without `/api` prefix
+3. All other routes should use `/api` prefix
+4. Let Vite proxy handle the `/api` routing
+5. Test both regular and superadmin user flows after any auth changes
+
+### Route Mounting Pattern
+Follow this pattern for route mounting:
+- `/auth/*` - Authentication routes (login, logout, token refresh)
+- `/api/*` - Protected application routes
+- `/health` - Health check (no auth required)
+
+**Example**:
+```javascript
+// Vite proxy configuration (client)
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:5000',
+      changeOrigin: true
+    }
+  }
+}
+
+// Server route mounting (server)
+app.use('/auth', authRoutes);                    // Auth routes
+app.use('/api/leads', isAuthenticated, leadRoutes); // Protected routes
+```
+
+### Common Pitfalls
+1. **Double Prefixing**: Adding `/api` in both client requests and server routes
+2. **Inconsistent Base URLs**: Different base URL patterns across services
+3. **Proxy Bypass**: Making direct API calls without using the configured proxy
+
+**Solution Pattern**:
+```javascript
+// api.js - Central configuration
+const API_BASE_URL = '/api';  // Base URL for proxied requests
+
+// Individual service files
+// Auth endpoints - NO /api prefix
+authAPI.login = () => api.post('/auth/login', data);
+
+// Other endpoints - Let base URL handle /api prefix
+leadsAPI.getLeads = () => api.get('/leads');  // Becomes /api/leads
+```
+
+---
+
+## Routing and Navigation
+
+### Issue: Authentication Route Complexity
+**Error**: `POST http://localhost:3001/api/auth/login 404 (Not Found)`
+
+**Root Cause**: 
+1. Inconsistent route prefixing between client and server
+2. Overly complex route nesting
+3. Multiple path prefixes causing confusion (`/api/auth/login` vs `/auth/login` vs `/login`)
+
+**Solution**:
+1. Simplify authentication routes to root level
+2. Consistent route structure across application
+3. Clear separation between public and protected routes
+
+```javascript
+// ✅ CORRECT - Server Route Setup (index.js)
+// Public auth routes at root level
+app.use('/', authRoutes);
+
+// Protected routes under /api
+app.use('/api/leads', isAuthenticated, leadRoutes);
+app.use('/api/organizations', isAuthenticated, organizationRoutes);
+
+// ✅ CORRECT - Client API Calls (authAPI.js)
+export const login = async (credentials) => {
+  const response = await api.post('/login', credentials);
+  return response.data;
+};
+
+// ❌ WRONG - Avoid nested auth routes
+export const login = async (credentials) => {
+  const response = await api.post('/api/auth/login', credentials);
+  return response.data;
+};
+```
+
+**Route Structure Best Practices**:
+1. Public Routes:
+   - `/` - Login page (redirects to dashboard if authenticated)
+   - `/forgot-password` - Password recovery
+   - `/reset-password` - Password reset
+
+2. Protected Routes:
+   - `/dashboard/*` - Regular user routes
+   - `/super-admin/*` - Super admin routes
+   - `/api/*` - API endpoints
+
+3. API Route Pattern:
+   ```
+   /api/[resource]/[action]  - Protected API routes
+   /[action]                 - Public auth routes
+   ```
+
+**Prevention**:
+1. Keep authentication routes at root level
+2. Use consistent route prefixing
+3. Separate public and protected routes clearly
+4. Document route structure in README
+5. Test route changes across all user roles
+
+### Common Route Issues:
+1. **Double Prefixing**: Adding `/api` in both client and server
+   ```javascript
+   // ❌ WRONG
+   server: app.use('/api/auth', authRoutes);
+   client: api.post('/api/auth/login', data);
+
+   // ✅ CORRECT
+   server: app.use('/', authRoutes);
+   client: api.post('/login', data);
+   ```
+
+2. **Inconsistent Protected Routes**:
+   ```javascript
+   // ❌ WRONG - Mixed prefixing
+   app.use('/auth', authRoutes);
+   app.use('/api/leads', leadRoutes);
+
+   // ✅ CORRECT - Consistent prefixing
+   app.use('/', authRoutes);  // Public routes
+   app.use('/api/leads', isAuthenticated, leadRoutes);  // Protected routes
+   ```
+
+3. **Route Redirection**:
+   ```javascript
+   // ✅ CORRECT - Smart redirection based on user role
+   <Route path="/" element={
+     isAuthenticated ? 
+       <Navigate to={isSuperAdmin ? "/super-admin" : "/dashboard"} /> : 
+       <Login />
+   } />
+   ```
+
+**Testing Checklist**:
+- [ ] Test login with superadmin account
+- [ ] Test login with regular user account
+- [ ] Verify redirect to appropriate dashboard
+- [ ] Check protected route access
+- [ ] Verify API endpoint access
+- [ ] Test route protection
+- [ ] Check error handling for invalid routes
 
 ---
 

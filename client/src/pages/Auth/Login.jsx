@@ -1,41 +1,68 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { loginUser } from '../../store/slices/authSlice';
-import LoadingSpinner from '../../components/UI/LoadingSpinner';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  loginUser,
+  selectIsAuthenticated,
+  selectAuthLoading,
+  selectAuthError,
+  selectIsSuperAdmin,
+} from "../../store/slices/authSlice";
+import { LoadingSpinner } from "../../components/UI/LoadingSpinner.jsx";
+import toast from "react-hot-toast";
+import { login as loginAPI } from "../../services/authAPI";
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.auth);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const loading = useSelector(selectAuthLoading);
+  const error = useSelector(selectAuthError);
+  const isSuperAdmin = useSelector(selectIsSuperAdmin);
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Navigate super admin to their dashboard
+      if (isSuperAdmin) {
+        navigate("/super-admin");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [isAuthenticated, isSuperAdmin, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error("Invalid login credentials. Please try again.", {
+        duration: 3000,
+        position: "top-center",
+      });
+    }
+  }, [error]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      const result = await dispatch(loginUser(formData)).unwrap();
-      toast.success('Login successful!');
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error(error.message || 'Login failed');
-    }
+    dispatch(loginUser(formData)); // Uses thunk, which now uses /api/auth/login
   };
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
@@ -46,13 +73,7 @@ const Login = () => {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/register"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              create a new account
-            </Link>
+            Please contact your administrator if you need an account
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -91,34 +112,18 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
-
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              Sign in
             </button>
           </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
         </form>
       </div>
     </div>
   );
 };
 
-export default Login; 
+export { Login };

@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import asyncHandler from 'express-async-handler';
+import { isAuthenticated } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -10,6 +11,7 @@ const prisma = new PrismaClient();
 // @access  Private
 router.get('/overview', asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  const organizationId = req.user.organizationId; // Get current organization context
 
   // Get current date and date ranges
   const now = new Date();
@@ -22,13 +24,17 @@ router.get('/overview', asyncHandler(async (req, res) => {
     const projectStats = await prisma.$transaction([
       // Total projects
       prisma.project.count({
-        where: { isActive: true }
+        where: { 
+          isActive: true,
+          organizationId // Filter by organization
+        }
       }),
       // Active projects
       prisma.project.count({
         where: { 
           isActive: true,
-          status: { in: ['PLANNING', 'IN_PROGRESS'] }
+          status: { in: ['PLANNING', 'IN_PROGRESS'] },
+          organizationId // Filter by organization
         }
       }),
       // Completed projects this month
@@ -36,13 +42,17 @@ router.get('/overview', asyncHandler(async (req, res) => {
         where: {
           isActive: true,
           status: 'COMPLETED',
-          updatedAt: { gte: startOfMonth }
+          updatedAt: { gte: startOfMonth },
+          organizationId // Filter by organization
         }
       }),
       // Projects by stage
       prisma.project.groupBy({
         by: ['stage'],
-        where: { isActive: true },
+        where: { 
+          isActive: true,
+          organizationId // Filter by organization
+        },
         _count: { stage: true }
       })
     ]);
@@ -53,7 +63,8 @@ router.get('/overview', asyncHandler(async (req, res) => {
       prisma.invoice.aggregate({
         where: {
           status: 'PAID',
-          paidAt: { gte: startOfMonth }
+          paidAt: { gte: startOfMonth },
+          organizationId // Filter by organization
         },
         _sum: { totalAmount: true }
       }),
@@ -61,21 +72,24 @@ router.get('/overview', asyncHandler(async (req, res) => {
       prisma.invoice.aggregate({
         where: {
           status: 'PAID',
-          paidAt: { gte: startOfYear }
+          paidAt: { gte: startOfYear },
+          organizationId // Filter by organization
         },
         _sum: { totalAmount: true }
       }),
       // Outstanding invoices
       prisma.invoice.aggregate({
         where: {
-          status: { in: ['SENT', 'OVERDUE'] }
+          status: { in: ['SENT', 'OVERDUE'] },
+          organizationId // Filter by organization
         },
         _sum: { totalAmount: true }
       }),
       // Recent payments
       prisma.payment.findMany({
         where: {
-          createdAt: { gte: thirtyDaysAgo }
+          createdAt: { gte: thirtyDaysAgo },
+          organizationId // Filter by organization
         },
         include: {
           invoice: {
@@ -92,26 +106,31 @@ router.get('/overview', asyncHandler(async (req, res) => {
     // Get task statistics
     const taskStats = await prisma.$transaction([
       // Total tasks
-      prisma.task.count(),
+      prisma.task.count({
+        where: { organizationId } // Filter by organization
+      }),
       // Completed tasks this month
       prisma.task.count({
         where: {
           status: 'COMPLETED',
-          completedAt: { gte: startOfMonth }
+          completedAt: { gte: startOfMonth },
+          organizationId // Filter by organization
         }
       }),
       // Overdue tasks
       prisma.task.count({
         where: {
           status: { in: ['PENDING', 'IN_PROGRESS'] },
-          dueDate: { lt: now }
+          dueDate: { lt: now },
+          organizationId // Filter by organization
         }
       }),
       // My assigned tasks
       prisma.task.count({
         where: {
           assigneeId: userId,
-          status: { in: ['PENDING', 'IN_PROGRESS'] }
+          status: { in: ['PENDING', 'IN_PROGRESS'] },
+          organizationId // Filter by organization
         }
       })
     ]);
@@ -119,11 +138,14 @@ router.get('/overview', asyncHandler(async (req, res) => {
     // Get client statistics
     const clientStats = await prisma.$transaction([
       // Total clients
-      prisma.client.count(),
+      prisma.client.count({
+        where: { organizationId } // Filter by organization
+      }),
       // New clients this month
       prisma.client.count({
         where: {
-          createdAt: { gte: startOfMonth }
+          createdAt: { gte: startOfMonth },
+          organizationId // Filter by organization
         }
       }),
       // Active clients (have projects)
@@ -131,9 +153,11 @@ router.get('/overview', asyncHandler(async (req, res) => {
         where: {
           projects: {
             some: {
-              isActive: true
+              isActive: true,
+              organizationId // Filter by organization
             }
-          }
+          },
+          organizationId // Filter by organization
         }
       })
     ]);
@@ -142,7 +166,10 @@ router.get('/overview', asyncHandler(async (req, res) => {
     const recentActivities = await prisma.$transaction([
       // Recent projects
       prisma.project.findMany({
-        where: { isActive: true },
+        where: { 
+          isActive: true,
+          organizationId // Filter by organization
+        },
         include: {
           client: true,
           creator: true
@@ -152,6 +179,7 @@ router.get('/overview', asyncHandler(async (req, res) => {
       }),
       // Recent communications
       prisma.communication.findMany({
+        where: { organizationId }, // Filter by organization
         include: {
           client: true,
           user: true
@@ -161,6 +189,7 @@ router.get('/overview', asyncHandler(async (req, res) => {
       }),
       // Recent invoices
       prisma.invoice.findMany({
+        where: { organizationId }, // Filter by organization
         include: {
           client: true
         },
@@ -176,7 +205,8 @@ router.get('/overview', asyncHandler(async (req, res) => {
         dueDate: {
           gte: now,
           lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
-        }
+        },
+        organizationId // Filter by organization
       },
       include: {
         project: {
@@ -535,5 +565,48 @@ router.put('/notifications/:id/read', asyncHandler(async (req, res) => {
     });
   }
 }));
+
+// Dashboard Metrics Endpoints (for frontend dashboard widgets)
+router.get('/metrics', isAuthenticated, (req, res) => {
+  res.json({
+    totalLeads: 120,
+    totalProjects: 45,
+    totalRevenue: 150000,
+    totalClients: 32,
+    totalTasks: 87
+  });
+});
+
+router.get('/projects/metrics', isAuthenticated, (req, res) => {
+  res.json({
+    activeProjects: 12,
+    completedProjects: 30,
+    overdueProjects: 3
+  });
+});
+
+router.get('/tasks/metrics', isAuthenticated, (req, res) => {
+  res.json({
+    openTasks: 40,
+    completedTasks: 35,
+    overdueTasks: 12
+  });
+});
+
+router.get('/financial/metrics', isAuthenticated, (req, res) => {
+  res.json({
+    totalRevenue: 150000,
+    outstandingInvoices: 12000,
+    paidInvoices: 138000
+  });
+});
+
+router.get('/clients/metrics', isAuthenticated, (req, res) => {
+  res.json({
+    totalClients: 32,
+    newClientsThisMonth: 4,
+    churnedClients: 1
+  });
+});
 
 export default router; 

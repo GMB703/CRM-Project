@@ -1,121 +1,93 @@
-import React, { useState, useEffect } from 'react'
-import { useOrganization } from '../../contexts/OrganizationContext'
-import LoadingSpinner from '../UI/LoadingSpinner'
+import React, { useState } from "react";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { useOrganization } from "../../contexts/OrganizationContext.jsx";
+import { useAuth } from "../../hooks/useAuth";
 
 /**
  * OrganizationSelector Component
  * Displays when user needs to select an organization (triggered by 300 status from API)
  */
-const OrganizationSelector = ({ organizations, onSelect, onCancel }) => {
-  const { switchOrganization, isLoading } = useOrganization()
-  const [selectedOrgId, setSelectedOrgId] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+const OrganizationSelector = ({ className = "" }) => {
+  const { currentOrganization, availableOrganizations, switchOrganization } =
+    useOrganization();
+  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Auto-select first organization if only one available
-  useEffect(() => {
-    if (organizations && organizations.length === 1) {
-      setSelectedOrgId(organizations[0].id)
-    }
-  }, [organizations])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!selectedOrgId) return
-
-    setIsSubmitting(true)
-    try {
-      await switchOrganization(selectedOrgId)
-      onSelect?.(selectedOrgId)
-    } catch (error) {
-      console.error('Failed to switch organization:', error)
-      // Error handling is done in the context
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleCancel = () => {
-    onCancel?.()
-  }
-
-  if (isLoading || isSubmitting) {
+  // Only SuperAdmin users can switch organizations
+  if (user?.role !== "SUPER_ADMIN") {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-          <div className="text-center">
-            <LoadingSpinner />
-            <p className="mt-4 text-gray-600">
-              {isSubmitting ? 'Switching organization...' : 'Loading...'}
-            </p>
-          </div>
+      <div className={`flex items-center ${className}`}>
+        <div className="text-sm text-gray-700 dark:text-gray-300">
+          {currentOrganization?.name || "No Organization"}
         </div>
       </div>
-    )
+    );
+  }
+
+  const handleOrganizationSwitch = async (organizationId) => {
+    try {
+      await switchOrganization(organizationId);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to switch organization:", error);
+    }
+  };
+
+  if (!availableOrganizations || availableOrganizations.length <= 1) {
+    return (
+      <div className={`flex items-center ${className}`}>
+        <div className="text-sm text-gray-700 dark:text-gray-300">
+          {currentOrganization?.name || "No Organization"}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Select Organization
-          </h2>
-          <p className="text-gray-600">
-            Please select an organization to continue accessing the system.
-          </p>
-        </div>
+    <div className={`relative ${className}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span className="text-gray-700 dark:text-gray-300">
+          {currentOrganization?.name || "Select Organization"}
+        </span>
+        <ChevronDownIcon
+          className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
-              Available Organizations
-            </label>
-            <select
-              id="organization"
-              value={selectedOrgId}
-              onChange={(e) => setSelectedOrgId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value="">Select an organization...</option>
-              {organizations?.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name} {org.code ? `(${org.code})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex space-x-3">
-            <button
-              type="submit"
-              disabled={!selectedOrgId || isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Continue
-            </button>
-            {onCancel && (
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-50">
+          <div className="py-1">
+            {availableOrganizations?.map((org) => (
               <button
-                type="button"
-                onClick={handleCancel}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                key={org.id}
+                onClick={() => handleOrganizationSwitch(org.id)}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                  currentOrganization?.id === org.id
+                    ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-300"
+                    : "text-gray-700 dark:text-gray-300"
+                }`}
               >
-                Cancel
+                <div className="flex items-center justify-between">
+                  <span>{org.name}</span>
+                  {currentOrganization?.id === org.id && (
+                    <span className="text-blue-500">✓</span>
+                  )}
+                </div>
+                {org.description && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {org.description}
+                  </div>
+                )}
               </button>
-            )}
+            ))}
           </div>
-        </form>
-
-        {organizations?.length === 0 && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p className="text-yellow-800 text-sm">
-              No organizations available. Please contact your administrator.
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default OrganizationSelector 
+export { OrganizationSelector };

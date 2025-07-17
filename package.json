@@ -8,10 +8,15 @@
   },
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "dev:safe": "concurrently \"npm run server:redundant\" \"npm run client:dev\"",
     "server:dev": "cd server && npm run dev",
+    "server:redundant": "cd server && npm run dev:redundant",
     "client:dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "start": "cd server && npm start",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "clean": "rm -rf node_modules server/node_modules client/node_modules",
+    "reset": "npm run clean && npm run install:all",
     "test": "npm run test:server && npm run test:client",
     "test:server": "cd server && npm test",
     "test:client": "cd client && npm test",
@@ -30,6 +35,7 @@
   "author": "CRM Project Team",
   "license": "MIT",
   "devDependencies": {
+    "axios": "^1.10.0",
     "concurrently": "^8.2.2",
     "prettier": "^3.1.1"
   },

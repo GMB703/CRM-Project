@@ -1,30 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Bars3Icon, 
-  BellIcon, 
+import React, { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  Bars3Icon,
+  BellIcon,
   UserCircleIcon,
   MagnifyingGlassIcon,
-  ChevronDownIcon 
-} from '@heroicons/react/24/outline';
-import { 
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
+import {
   toggleMobileSidebar,
-  selectMobileSidebarOpen 
-} from '../../store/slices/uiSlice';
-import { logoutUser } from '../../store/slices/authSlice';
+  selectMobileSidebarOpen,
+} from "../../store/slices/uiSlice";
+import { logout, selectCurrentUser } from "../../store/slices/authSlice";
+import { useOrganization } from "../../contexts/OrganizationContext.jsx";
 
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
-  const currentOrganization = useSelector((state) => state.organization?.currentOrganization);
+  const user = useSelector(selectCurrentUser);
+  const { currentOrganization } = useOrganization();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still navigate to login on error
+      navigate("/login");
+    }
   };
 
   // Close dropdown when clicking outside
@@ -36,11 +43,11 @@ const Header = () => {
     };
 
     if (isUserMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isUserMenuOpen]);
 
@@ -120,7 +127,7 @@ const Header = () => {
                   className="ml-4 text-sm font-semibold leading-6 text-gray-900"
                   aria-hidden="true"
                 >
-                  {user?.name || user?.email || 'User'}
+                  {user?.name || user?.email || "User"}
                 </span>
                 <ChevronDownIcon className="ml-2 h-4 w-4 text-gray-400" />
               </span>
@@ -131,19 +138,20 @@ const Header = () => {
               <div className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                 <div className="px-3 py-2 border-b border-gray-100">
                   <div className="text-sm font-medium text-gray-900">
-                    {user?.name || 'User'}
+                    {user?.name || "User"}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {user?.email}
-                  </div>
+                  <div className="text-xs text-gray-500">{user?.email}</div>
                 </div>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setIsUserMenuOpen(false);
-
-                    navigate('/settings');
+                    navigate(
+                      user?.role === "SUPER_ADMIN"
+                        ? "/super-admin/settings"
+                        : "/dashboard/settings",
+                    );
                   }}
                   className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
@@ -167,4 +175,4 @@ const Header = () => {
   );
 };
 
-export default Header; 
+export { Header };

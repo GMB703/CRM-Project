@@ -1,49 +1,51 @@
-import React, { useState } from 'react';
-import { 
-  ChatBubbleLeftRightIcon, 
+import React, { useState } from "react";
+import {
+  ChatBubbleLeftRightIcon,
   PaperAirplaneIcon,
   EllipsisVerticalIcon,
-  CheckIcon
-} from '@heroicons/react/24/outline';
+  CheckIcon,
+} from "@heroicons/react/24/outline";
 
 const ClientPortalMessages = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      clientName: 'John Smith',
-      projectName: 'Kitchen Renovation',
-      message: 'Hi! I have a question about the timeline for the cabinet installation.',
-      timestamp: '2 hours ago',
+      clientName: "John Smith",
+      projectName: "Kitchen Renovation",
+      message:
+        "Hi! I have a question about the timeline for the cabinet installation.",
+      timestamp: "2 hours ago",
       isRead: false,
-      isClient: true
+      isClient: true,
     },
     {
       id: 2,
-      clientName: 'Sarah Wilson',
-      projectName: 'Bathroom Remodel',
-      message: 'The progress photos look great! When will the next phase begin?',
-      timestamp: '1 day ago',
+      clientName: "Sarah Wilson",
+      projectName: "Bathroom Remodel",
+      message:
+        "The progress photos look great! When will the next phase begin?",
+      timestamp: "1 day ago",
       isRead: true,
-      isClient: true
-    }
+      isClient: true,
+    },
   ]);
 
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [replyText, setReplyText] = useState('');
+  const [replyText, setReplyText] = useState("");
 
   const handleReply = (messageId) => {
     if (replyText.trim()) {
       // In a real app, this would send the reply to the backend
-      console.log('Sending reply:', replyText);
-      setReplyText('');
+      console.log("Sending reply:", replyText);
+      setReplyText("");
     }
   };
 
   const markAsRead = (messageId) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === messageId ? { ...msg, isRead: true } : msg
-      )
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId ? { ...msg, isRead: true } : msg,
+      ),
     );
   };
 
@@ -52,10 +54,12 @@ const ClientPortalMessages = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
           <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Client Portal Messages</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Client Portal Messages
+          </h3>
         </div>
         <span className="text-sm text-gray-500">
-          {messages.filter(m => !m.isRead).length} unread
+          {messages.filter((m) => !m.isRead).length} unread
         </span>
       </div>
 
@@ -64,9 +68,9 @@ const ClientPortalMessages = () => {
           <div
             key={message.id}
             className={`border rounded-lg p-4 transition-colors ${
-              !message.isRead 
-                ? 'border-blue-200 bg-blue-50' 
-                : 'border-gray-200 bg-white'
+              !message.isRead
+                ? "border-blue-200 bg-blue-50"
+                : "border-gray-200 bg-white"
             }`}
           >
             <div className="flex items-start justify-between">
@@ -86,7 +90,9 @@ const ClientPortalMessages = () => {
                   )}
                 </div>
                 <p className="text-gray-700 mb-2">{message.message}</p>
-                <span className="text-sm text-gray-500">{message.timestamp}</span>
+                <span className="text-sm text-gray-500">
+                  {message.timestamp}
+                </span>
               </div>
               <div className="flex items-center space-x-2 ml-4">
                 {!message.isRead && (
@@ -99,7 +105,11 @@ const ClientPortalMessages = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => setSelectedMessage(selectedMessage === message.id ? null : message.id)}
+                  onClick={() =>
+                    setSelectedMessage(
+                      selectedMessage === message.id ? null : message.id,
+                    )
+                  }
                   className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                 >
                   <EllipsisVerticalIcon className="h-4 w-4" />
@@ -150,4 +160,4 @@ const ClientPortalMessages = () => {
   );
 };
 
-export default ClientPortalMessages; 
+export { ClientPortalMessages };

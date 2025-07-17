@@ -1,32 +1,38 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { DevicePhoneMobileIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import {
+  DevicePhoneMobileIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
 
 const SMSIntegration = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      to: '+1-555-0123',
-      message: 'Hi! Your project estimate is ready for review. Please check your email.',
+      to: "+1-555-0123",
+      message:
+        "Hi! Your project estimate is ready for review. Please check your email.",
       timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      status: 'delivered'
+      status: "delivered",
     },
     {
       id: 2,
-      to: '+1-555-0456',
-      message: 'Reminder: Your appointment is scheduled for tomorrow at 2 PM.',
+      to: "+1-555-0456",
+      message: "Reminder: Your appointment is scheduled for tomorrow at 2 PM.",
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      status: 'delivered'
-    }
+      status: "delivered",
+    },
   ]);
   const [newMessage, setNewMessage] = useState({
-    to: '',
-    message: ''
+    to: "",
+    message: "",
   });
   const [showCompose, setShowCompose] = useState(false);
 
   const user = useSelector((state) => state.auth?.user);
-  const currentOrganization = useSelector((state) => state.organization?.currentOrganization);
+  const currentOrganization = useSelector(
+    (state) => state.organization?.currentOrganization,
+  );
 
   const handleSendSMS = (e) => {
     e.preventDefault();
@@ -37,27 +43,31 @@ const SMSIntegration = () => {
       to: newMessage.to,
       message: newMessage.message,
       timestamp: new Date().toISOString(),
-      status: 'sent'
+      status: "sent",
     };
 
-    setMessages(prev => [smsData, ...prev]);
-    setNewMessage({ to: '', message: '' });
+    setMessages((prev) => [smsData, ...prev]);
+    setNewMessage({ to: "", message: "" });
     setShowCompose(false);
 
     // Simulate delivery confirmation after 2 seconds
     setTimeout(() => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === smsData.id ? { ...msg, status: 'delivered' } : msg
-      ));
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === smsData.id ? { ...msg, status: "delivered" } : msg,
+        ),
+      );
     }, 2000);
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'delivered':
+      case "delivered":
         return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
-      case 'sent':
-        return <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
+      case "sent":
+        return (
+          <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        );
       default:
         return <div className="h-4 w-4 bg-gray-300 rounded-full" />;
     }
@@ -65,14 +75,14 @@ const SMSIntegration = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'delivered':
-        return 'Delivered';
-      case 'sent':
-        return 'Sending...';
-      case 'failed':
-        return 'Failed';
+      case "delivered":
+        return "Delivered";
+      case "sent":
+        return "Sending...";
+      case "failed":
+        return "Failed";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
@@ -98,24 +108,37 @@ const SMSIntegration = () => {
       {/* Compose SMS */}
       {showCompose && (
         <div className="bg-white border rounded-lg p-6">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Send New SMS</h4>
+          <h4 className="text-md font-medium text-gray-900 mb-4">
+            Send New SMS
+          </h4>
           <form onSubmit={handleSendSMS} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Phone Number
+              </label>
               <input
                 type="tel"
                 value={newMessage.to}
-                onChange={(e) => setNewMessage(prev => ({ ...prev, to: e.target.value }))}
+                onChange={(e) =>
+                  setNewMessage((prev) => ({ ...prev, to: e.target.value }))
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                 placeholder="+1-555-0123"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Message</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Message
+              </label>
               <textarea
                 value={newMessage.message}
-                onChange={(e) => setNewMessage(prev => ({ ...prev, message: e.target.value }))}
+                onChange={(e) =>
+                  setNewMessage((prev) => ({
+                    ...prev,
+                    message: e.target.value,
+                  }))
+                }
                 rows={3}
                 maxLength={160}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -148,7 +171,9 @@ const SMSIntegration = () => {
       {/* SMS History */}
       <div className="bg-white border rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b bg-gray-50">
-          <h4 className="text-md font-medium text-gray-900">Recent SMS Messages</h4>
+          <h4 className="text-md font-medium text-gray-900">
+            Recent SMS Messages
+          </h4>
         </div>
         <div className="divide-y divide-gray-200">
           {messages.length === 0 ? (
@@ -171,12 +196,11 @@ const SMSIntegration = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {sms.message}
-                    </div>
+                    <div className="text-sm text-gray-600">{sms.message}</div>
                   </div>
                   <div className="ml-4 text-xs text-gray-500">
-                    {new Date(sms.timestamp).toLocaleDateString()} {new Date(sms.timestamp).toLocaleTimeString()}
+                    {new Date(sms.timestamp).toLocaleDateString()}{" "}
+                    {new Date(sms.timestamp).toLocaleTimeString()}
                   </div>
                 </div>
               </div>
@@ -207,7 +231,7 @@ const SMSIntegration = () => {
             </div>
             <div className="ml-4">
               <div className="text-2xl font-bold text-gray-900">
-                {messages.filter(m => m.status === 'delivered').length}
+                {messages.filter((m) => m.status === "delivered").length}
               </div>
               <div className="text-sm text-gray-500">Delivered</div>
             </div>
@@ -218,13 +242,28 @@ const SMSIntegration = () => {
             <div className="flex-shrink-0">
               <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-sm font-bold text-blue-600">
-                  {messages.length > 0 ? Math.round((messages.filter(m => m.status === 'delivered').length / messages.length) * 100) : 0}%
+                  {messages.length > 0
+                    ? Math.round(
+                        (messages.filter((m) => m.status === "delivered")
+                          .length /
+                          messages.length) *
+                          100,
+                      )
+                    : 0}
+                  %
                 </span>
               </div>
             </div>
             <div className="ml-4">
               <div className="text-2xl font-bold text-gray-900">
-                {messages.length > 0 ? Math.round((messages.filter(m => m.status === 'delivered').length / messages.length) * 100) : 0}%
+                {messages.length > 0
+                  ? Math.round(
+                      (messages.filter((m) => m.status === "delivered").length /
+                        messages.length) *
+                        100,
+                    )
+                  : 0}
+                %
               </div>
               <div className="text-sm text-gray-500">Success Rate</div>
             </div>
@@ -243,7 +282,8 @@ const SMSIntegration = () => {
               SMS Integration Status
             </h3>
             <p className="text-sm text-green-700 mt-1">
-              SMS system is operational. Organization: {currentOrganization?.name || 'Demo Organization'}
+              SMS system is operational. Organization:{" "}
+              {currentOrganization?.name || "Demo Organization"}
             </p>
           </div>
         </div>
@@ -252,4 +292,4 @@ const SMSIntegration = () => {
   );
 };
 
-export default SMSIntegration; 
+export { SMSIntegration };

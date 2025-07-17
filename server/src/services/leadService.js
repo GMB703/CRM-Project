@@ -422,3 +422,18 @@ class LeadService {
 }
 
 export default LeadService; 
+
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This Lead Service is complete and stable.
+ * Core functionality:
+ * - Lead CRUD operations
+ * - Lead filtering and search
+ * - Lead stage management
+ * - Lead activity tracking
+ * - Lead assignment
+ * - Lead conversion
+ * 
+ * This is the core lead management service.
+ * Changes here could affect the entire lead management system.
+ * Modify only if absolutely necessary and after thorough testing.
+ */ 

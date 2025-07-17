@@ -1,43 +1,36 @@
-import { configureStore } from '@reduxjs/toolkit'
-import { persistStore, persistReducer } from 'redux-persist'
-import storage from 'redux-persist/lib/storage'
-import { combineReducers } from 'redux'
+import { authSlice } from "./slices/authSlice";
+import { uiSlice } from "./slices/uiSlice";
+import { notificationSlice } from "./slices/notificationSlice";
+import { filterSlice } from "./slices/filterSlice";
+import { combineReducers } from "redux";
+import { configureStore } from "@reduxjs/toolkit";
+import { persistStore, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
 
-// Import reducers (not slices)
-import authReducer from './slices/authSlice'
-import uiReducer from './slices/uiSlice'
-import notificationReducer from './slices/notificationSlice'
-import filterReducer from './slices/filterSlice'
-
-// Persist configuration
 const persistConfig = {
-  key: 'root',
+  key: "root",
   storage,
-  whitelist: ['auth', 'ui'], // Only persist auth and ui state
-}
+  whitelist: ["auth", "ui"],
+};
 
-// Root reducer
 const rootReducer = combineReducers({
-  auth: authReducer,
-  ui: uiReducer,
-  notifications: notificationReducer,
-  filters: filterReducer,
-})
+  auth: authSlice.reducer,
+  ui: uiSlice.reducer,
+  notifications: notificationSlice.reducer,
+  filters: filterSlice.reducer,
+});
 
-// Persisted reducer
-const persistedReducer = persistReducer(persistConfig, rootReducer)
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Store configuration
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
       },
     }),
-  devTools: process.env.NODE_ENV !== 'production',
-})
+  devTools: process.env.NODE_ENV !== "production",
+});
 
-// Persistor
-export const persistor = persistStore(store) 
+export const persistor = persistStore(store);

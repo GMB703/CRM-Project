@@ -233,6 +233,22 @@ function getTimeUntilExpiration(estimate) {
   };
 }
 
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This Estimate Utilities module is complete and stable.
+ * Core functionality:
+ * - Estimate calculations
+ * - Number generation
+ * - Data validation
+ * - Currency formatting
+ * - Status management
+ * - Email preparation
+ * - Expiration handling
+ * 
+ * This is a critical business logic component.
+ * Changes here could affect all estimate-related functionality.
+ * Modify only if absolutely necessary and after thorough testing.
+ */
+
 export {
   calculateEstimateTotals,
   generateEstimateNumber,

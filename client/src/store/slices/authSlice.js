@@ -1,209 +1,209 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { authAPI } from '../../services/authAPI'
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  login,
+  logout as logoutAPI,
+  getCurrentUser as getCurrentUserAPI,
+} from "../../services/authAPI";
 
 // Async thunks
-export const login = createAsyncThunk(
-  'auth/login',
+export const loginUser = createAsyncThunk(
+  "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await authAPI.login(credentials)
-      // response is {success: true, data: {user, token, organization}}
-      return response.data
+      const response = await login(credentials); // response = { success, data }
+      // Debug log: login response
+      console.log("[Login Thunk] Login response:", response);
+      return response.data; // Return only the data object
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed')
+      return rejectWithValue(error.message || "Login failed");
     }
-  }
-)
-
-export const register = createAsyncThunk(
-  'auth/register',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await authAPI.register(userData)
-      return response.data
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed')
-    }
-  }
-)
+  },
+);
 
 export const logout = createAsyncThunk(
-  'auth/logout',
+  "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await authAPI.logout()
-      return null
+      await logoutAPI();
+      return null;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Logout failed')
+      return rejectWithValue(error);
     }
-  }
-)
+  },
+);
 
 export const getCurrentUser = createAsyncThunk(
-  'auth/getCurrentUser',
-  async (_, { rejectWithValue }) => {
+  "auth/getCurrentUser",
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const response = await authAPI.getCurrentUser()
-      // response is {success: true, data: {...user data...}}
-      return response.data
+      // Only proceed if we have a token
+      const token = getState().auth.token || localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No token available");
+      }
+      const response = await getCurrentUserAPI();
+      return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get user')
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+      }
+      return rejectWithValue(error);
     }
-  }
-)
-
-export const updatePassword = createAsyncThunk(
-  'auth/updatePassword',
-  async (passwordData, { rejectWithValue }) => {
-    try {
-      const response = await authAPI.updatePassword(passwordData)
-      return response.data
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Password update failed')
-    }
-  }
-)
+  },
+);
 
 // Initial state
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: false,
+  token: localStorage.getItem("token"),
+  isAuthenticated: !!localStorage.getItem("token"),
   loading: false,
   error: null,
-  registerLoading: false,
-  registerError: null,
-}
+  isSuperAdmin: false, // Add super admin flag
+};
 
 // Auth slice
 const authSlice = createSlice({
-  name: 'auth',
-  initialState,
+  name: "auth",
+  initialState: {
+    user: null,
+    token: localStorage.getItem("token"),
+    isAuthenticated: !!localStorage.getItem("token"),
+    loading: false,
+    error: null,
+    isSuperAdmin: false, // Add super admin flag
+  },
   reducers: {
     clearError: (state) => {
-      state.error = null
-      state.registerError = null
+      state.error = null;
     },
     setToken: (state, action) => {
-      state.token = action.payload
-      state.isAuthenticated = !!action.payload
+      state.token = action.payload;
+      state.isAuthenticated = !!action.payload;
       if (action.payload) {
-        localStorage.setItem('token', action.payload)
+        localStorage.setItem("token", action.payload);
       } else {
-        localStorage.removeItem('token')
+        localStorage.removeItem("token");
       }
     },
     updateUser: (state, action) => {
-      state.user = { ...state.user, ...action.payload }
+      state.user = { ...state.user, ...action.payload };
     },
   },
   extraReducers: (builder) => {
     // Login
     builder
-      .addCase(login.pending, (state) => {
-        state.loading = true
-        state.error = null
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
-      .addCase(login.fulfilled, (state, action) => {
-        state.loading = false
-        state.user = action.payload.user
-        state.token = action.payload.token
-        state.isAuthenticated = true
-        localStorage.setItem('token', action.payload.token)
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.error = null;
+        state.isSuperAdmin = action.payload.user.role === "SUPER_ADMIN";
 
-    // Register
-    builder
-      .addCase(register.pending, (state) => {
-        state.registerLoading = true
-        state.registerError = null
+        // Store token and user in localStorage
+        localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("user", JSON.stringify(action.payload.user));
+
+        // Debug log: token and user after login
+        console.log(
+          "[Login Reducer] Token set in localStorage:",
+          localStorage.getItem("token"),
+        );
+        console.log(
+          "[Login Reducer] User set in localStorage:",
+          localStorage.getItem("user"),
+        );
+
+        // Store organization ID if available and not super admin
+        if (
+          action.payload.user.role !== "SUPER_ADMIN" &&
+          action.payload.organization
+        ) {
+          localStorage.setItem(
+            "organizationId",
+            action.payload.organization.id,
+          );
+        } else {
+          // Remove organization ID for super admin
+          localStorage.removeItem("organizationId");
+        }
       })
-      .addCase(register.fulfilled, (state, action) => {
-        state.registerLoading = false
-        state.user = action.payload.user
-        state.token = action.payload.token
-        state.isAuthenticated = true
-        localStorage.setItem('token', action.payload.token)
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.registerLoading = false
-        state.registerError = action.payload
-      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
+        state.isSuperAdmin = false;
+        // Clear all auth data
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("organizationId");
+      });
 
     // Logout
     builder
-      .addCase(logout.pending, (state) => {
-        state.loading = true
-      })
       .addCase(logout.fulfilled, (state) => {
-        state.loading = false
-        state.user = null
-        state.token = null
-        state.isAuthenticated = false
-        localStorage.removeItem('token')
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+        state.error = null;
+        state.isSuperAdmin = false;
+        // Clear all auth data
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("organizationId");
       })
-      .addCase(logout.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
+      .addCase(logout.rejected, (state) => {
+        // Even if server logout fails, clear local state
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+        state.isSuperAdmin = false;
+        // Clear all auth data
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("organizationId");
+      });
 
     // Get current user
     builder
       .addCase(getCurrentUser.pending, (state) => {
-        state.loading = true
-        state.error = null
+        state.loading = true;
+        state.error = null;
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
-        state.loading = false
-        state.user = action.payload  // action.payload is the user data directly
-        state.isAuthenticated = true
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.error = null;
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.user = null
-        state.token = null
-        state.isAuthenticated = false
-        localStorage.removeItem('token')
-      })
-
-    // Update password
-    builder
-      .addCase(updatePassword.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(updatePassword.fulfilled, (state) => {
-        state.loading = false
-      })
-      .addCase(updatePassword.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
+        state.error = action.payload;
+      });
   },
-})
+});
 
 // Export actions
-export const { clearError, setToken, updateUser } = authSlice.actions
-
-// Export async thunks with alternative names for compatibility
-export const loginUser = login
-export const registerUser = register
-export const logoutUser = logout
+export const { clearError, setToken, updateUser } = authSlice.actions;
 
 // Export selectors
-export const selectAuth = (state) => state.auth
-export const selectUser = (state) => state.auth.user
-export const selectToken = (state) => state.auth.token
-export const selectIsAuthenticated = (state) => state.auth.isAuthenticated
-export const selectAuthLoading = (state) => state.auth.loading
-export const selectAuthError = (state) => state.auth.error
-export const selectRegisterLoading = (state) => state.auth.registerLoading
-export const selectRegisterError = (state) => state.auth.registerError
+export const selectCurrentUser = (state) => state.auth.user;
+export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
+export const selectAuthLoading = (state) => state.auth.loading;
+export const selectAuthError = (state) => state.auth.error;
+export const selectIsSuperAdmin = (state) => state.auth.isSuperAdmin; // Add super admin selector
 
 // Export reducer
-export default authSlice.reducer 
+export { authSlice };

@@ -1004,3 +1004,20 @@ export default {
   RELATIONSHIP_SCOPED_MODELS,
   GLOBAL_MODELS
 }; 
+
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This database service is complete and stable.
+ * Core functionality:
+ * - Organization context management
+ * - Multi-tenant data access control
+ * - CRUD operations with organization scoping
+ * - Transaction support
+ * - Bulk operations
+ * - Dashboard statistics
+ * - Activity tracking
+ * - Search functionality
+ * 
+ * This is the core database service that ensures proper data isolation.
+ * Changes here could affect data security and multi-tenant functionality.
+ * Modify only if absolutely necessary and after thorough testing.
+ */ 

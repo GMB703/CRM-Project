@@ -242,3 +242,123 @@ The system is production-ready and integrates seamlessly with your existing cust
 ---
 
 Built with ❤️ for construction professionals 
+
+# CRM Application Setup Guide
+
+## Port Configuration
+The application uses the following fixed ports:
+- Client (Frontend): **Port 3001**
+- Server (Backend): **Port 5000**
+
+## Prerequisites
+- Node.js (v16 or higher)
+- npm (v7 or higher)
+- PostgreSQL (v13 or higher)
+
+## Initial Setup
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd crm-project
+```
+
+2. Install root dependencies:
+```bash
+npm install
+```
+
+3. Install client dependencies:
+```bash
+cd client
+npm install
+cd ..
+```
+
+4. Install server dependencies:
+```bash
+cd server
+npm install
+cd ..
+```
+
+5. Set up environment variables:
+   - Copy `.env.example` to `.env` in the server directory
+   - Update the database connection string and other required variables
+
+6. Initialize the database:
+```bash
+cd server
+npx prisma migrate dev
+cd ..
+```
+
+## Starting the Application
+
+### Development Mode
+
+1. Start both client and server with a single command from the root directory:
+```bash
+npm run dev
+```
+
+This will start:
+- Frontend at http://localhost:3001
+- Backend at http://localhost:5000
+
+### Starting Individually
+
+If you need to run the client or server separately:
+
+1. Start the client:
+```bash
+cd client
+npm run dev
+```
+
+2. Start the server:
+```bash
+cd server
+npm run dev
+```
+
+## Troubleshooting Port Issues
+
+The application is configured to automatically handle port conflicts:
+
+- The client (Vite) is configured to strictly use port 3001
+- The server will automatically kill any process using port 5000 before starting
+
+If you still experience port issues:
+
+1. Manual port cleanup:
+```bash
+# For Windows:
+netstat -ano | findstr :3001
+netstat -ano | findstr :5000
+taskkill /F /PID <PID>
+
+# For Mac/Linux:
+lsof -i :3001
+lsof -i :5000
+kill -9 <PID>
+```
+
+2. Verify no other applications are using these ports
+3. Clear any zombie processes:
+```bash
+# For Mac/Linux:
+killall node
+```
+
+## Test Accounts
+
+- Super Admin: superadmin@crmapp.com / Admin123!
+- Acme Construction: admin@acmeconst.com / Admin123!
+- BuildRight Remodeling: admin@buildright.com / Admin123!
+
+## API Documentation
+
+The API documentation is available at:
+- Development: http://localhost:5000/api-docs
+- Swagger UI: http://localhost:5000/swagger 

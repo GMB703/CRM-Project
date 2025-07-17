@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import {
   PlusIcon,
   TrashIcon,
@@ -9,12 +9,12 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   MapPinIcon,
-} from '@heroicons/react/24/outline';
-import { useAuth } from '../../hooks/useAuth';
-import { useOrganization } from '../../contexts/OrganizationContext';
-import LoadingSpinner from '../UI/LoadingSpinner';
-import Button from '../UI/Button';
-import api from '../../services/api';
+} from "@heroicons/react/24/outline";
+import { useAuth } from "../../hooks/useAuth";
+import { useOrganization } from "../../contexts/OrganizationContext.jsx";
+import { LoadingSpinner } from "../UI/LoadingSpinner.jsx";
+import { Button } from "../UI/Button.jsx";
+import { api } from "../../services/api";
 
 const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   const { user } = useAuth();
@@ -23,31 +23,31 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
-    title: '',
-    clientId: '',
-    projectId: '',
-    clientName: '',
-    clientEmail: '',
-    clientPhone: '',
-    clientAddress: '',
-    description: '',
-    notes: '',
-    validUntil: '',
+    title: "",
+    clientId: "",
+    projectId: "",
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    clientAddress: "",
+    description: "",
+    notes: "",
+    validUntil: "",
     taxRate: 0,
     discountAmount: 0,
-    discountType: 'amount', // 'amount' or 'percentage'
+    discountType: "amount", // 'amount' or 'percentage'
     lineItems: [
       {
-        description: '',
+        description: "",
         quantity: 1,
         unitPrice: 0,
-        unit: 'each',
-        notes: '',
-      }
+        unit: "each",
+        notes: "",
+      },
     ],
   });
 
@@ -56,18 +56,18 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
     const loadData = async () => {
       try {
         // Load clients
-        const clientsResponse = await api.get('/clients');
+        const clientsResponse = await api.get("/clients");
         setClients(clientsResponse.data.data || []);
 
         // Load projects
-        const projectsResponse = await api.get('/projects');
+        const projectsResponse = await api.get("/projects");
         setProjects(projectsResponse.data.data || []);
 
         // Load catalog items
-        const catalogResponse = await api.get('/estimates/catalog');
+        const catalogResponse = await api.get("/estimates/catalog");
         setCatalogItems(catalogResponse.data.data || []);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error("Error loading data:", error);
       }
     };
 
@@ -78,79 +78,84 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   useEffect(() => {
     if (estimate) {
       setFormData({
-        title: estimate.title || '',
-        clientId: estimate.clientId || '',
-        projectId: estimate.projectId || '',
-        clientName: estimate.clientName || '',
-        clientEmail: estimate.clientEmail || '',
-        clientPhone: estimate.clientPhone || '',
-        clientAddress: estimate.clientAddress || '',
-        description: estimate.description || '',
-        notes: estimate.notes || '',
-        validUntil: estimate.validUntil ? new Date(estimate.validUntil).toISOString().split('T')[0] : '',
+        title: estimate.title || "",
+        clientId: estimate.clientId || "",
+        projectId: estimate.projectId || "",
+        clientName: estimate.clientName || "",
+        clientEmail: estimate.clientEmail || "",
+        clientPhone: estimate.clientPhone || "",
+        clientAddress: estimate.clientAddress || "",
+        description: estimate.description || "",
+        notes: estimate.notes || "",
+        validUntil: estimate.validUntil
+          ? new Date(estimate.validUntil).toISOString().split("T")[0]
+          : "",
         taxRate: estimate.taxRate || 0,
         discountAmount: estimate.discountAmount || 0,
-        discountType: estimate.discountType || 'amount',
-        lineItems: estimate.lineItems?.length > 0 ? estimate.lineItems : [
-          {
-            description: '',
-            quantity: 1,
-            unitPrice: 0,
-            unit: 'each',
-            notes: '',
-          }
-        ],
+        discountType: estimate.discountType || "amount",
+        lineItems:
+          estimate.lineItems?.length > 0
+            ? estimate.lineItems
+            : [
+                {
+                  description: "",
+                  quantity: 1,
+                  unitPrice: 0,
+                  unit: "each",
+                  notes: "",
+                },
+              ],
       });
     }
   }, [estimate]);
 
   // Handle client selection
   const handleClientChange = (clientId) => {
-    const client = clients.find(c => c.id === clientId);
+    const client = clients.find((c) => c.id === clientId);
     if (client) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         clientId,
         clientName: client.name,
         clientEmail: client.email,
-        clientPhone: client.phone || '',
-        clientAddress: client.address || '',
+        clientPhone: client.phone || "",
+        clientAddress: client.address || "",
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        clientId: '',
-        clientName: '',
-        clientEmail: '',
-        clientPhone: '',
-        clientAddress: '',
+        clientId: "",
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        clientAddress: "",
       }));
     }
   };
 
   // Handle line item changes
   const handleLineItemChange = (index, field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      lineItems: prev.lineItems.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
+      lineItems: prev.lineItems.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item,
       ),
     }));
   };
 
   // Add line item
   const addLineItem = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       lineItems: [
         ...prev.lineItems,
         {
-          description: '',
+          description: "",
           quantity: 1,
           unitPrice: 0,
-          unit: 'each',
-          notes: '',
-        }
+          unit: "each",
+          notes: "",
+        },
       ],
     }));
   };
@@ -158,7 +163,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   // Remove line item
   const removeLineItem = (index) => {
     if (formData.lineItems.length > 1) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         lineItems: prev.lineItems.filter((_, i) => i !== index),
       }));
@@ -167,7 +172,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
 
   // Add catalog item to line items
   const addCatalogItem = (catalogItem) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       lineItems: [
         ...prev.lineItems,
@@ -175,22 +180,22 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
           description: catalogItem.name,
           quantity: 1,
           unitPrice: catalogItem.price,
-          unit: catalogItem.unit || 'each',
-          notes: catalogItem.description || '',
-        }
+          unit: catalogItem.unit || "each",
+          notes: catalogItem.description || "",
+        },
       ],
     }));
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   // Calculate totals
   const calculateTotals = () => {
     const subtotal = formData.lineItems.reduce((sum, item) => {
-      return sum + (item.quantity * item.unitPrice);
+      return sum + item.quantity * item.unitPrice;
     }, 0);
 
     let discount = 0;
-    if (formData.discountType === 'percentage') {
+    if (formData.discountType === "percentage") {
       discount = subtotal * (formData.discountAmount / 100);
     } else {
       discount = formData.discountAmount;
@@ -213,24 +218,27 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
-      toast.error('Title is required');
+      toast.error("Title is required");
       return;
     }
 
     if (!formData.clientName.trim()) {
-      toast.error('Client name is required');
+      toast.error("Client name is required");
       return;
     }
 
     if (!formData.clientEmail.trim()) {
-      toast.error('Client email is required');
+      toast.error("Client email is required");
       return;
     }
 
-    if (formData.lineItems.length === 0 || !formData.lineItems.some(item => item.description.trim())) {
-      toast.error('At least one line item is required');
+    if (
+      formData.lineItems.length === 0 ||
+      !formData.lineItems.some((item) => item.description.trim())
+    ) {
+      toast.error("At least one line item is required");
       return;
     }
 
@@ -252,9 +260,10 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   };
 
   // Filter catalog items
-  const filteredCatalogItems = catalogItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCatalogItems = catalogItems.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -268,7 +277,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, title: e.target.value }))
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Enter estimate title"
             required
@@ -282,7 +293,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
           <input
             type="date"
             value={formData.validUntil}
-            onChange={(e) => setFormData(prev => ({ ...prev, validUntil: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, validUntil: e.target.value }))
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -306,7 +319,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select a client...</option>
-              {clients.map(client => (
+              {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name} - {client.email}
                 </option>
@@ -320,15 +333,21 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             </label>
             <select
               value={formData.projectId}
-              onChange={(e) => setFormData(prev => ({ ...prev, projectId: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, projectId: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select a project...</option>
-              {projects.filter(p => !formData.clientId || p.clientId === formData.clientId).map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
+              {projects
+                .filter(
+                  (p) => !formData.clientId || p.clientId === formData.clientId,
+                )
+                .map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -341,7 +360,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             <input
               type="text"
               value={formData.clientName}
-              onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, clientName: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter client name"
               required
@@ -355,7 +376,12 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             <input
               type="email"
               value={formData.clientEmail}
-              onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  clientEmail: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter client email"
               required
@@ -369,7 +395,12 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             <input
               type="tel"
               value={formData.clientPhone}
-              onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  clientPhone: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter client phone"
             />
@@ -382,7 +413,12 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             <input
               type="text"
               value={formData.clientAddress}
-              onChange={(e) => setFormData(prev => ({ ...prev, clientAddress: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  clientAddress: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter client address"
             />
@@ -397,7 +433,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
         </label>
         <textarea
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Enter estimate description"
@@ -410,7 +448,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Add from Catalog
           </h3>
-          
+
           <div className="relative mb-4">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -424,7 +462,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
 
           {searchTerm && (
             <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-              {filteredCatalogItems.map(item => (
+              {filteredCatalogItems.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => addCatalogItem(item)}
@@ -432,12 +470,20 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-medium text-gray-900">{item.name}</div>
-                      <div className="text-sm text-gray-500">{item.description}</div>
+                      <div className="font-medium text-gray-900">
+                        {item.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {item.description}
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium text-gray-900">${item.price}</div>
-                      <div className="text-sm text-gray-500">per {item.unit}</div>
+                      <div className="font-medium text-gray-900">
+                        ${item.price}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        per {item.unit}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -473,7 +519,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
                   <input
                     type="text"
                     value={item.description}
-                    onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
+                    onChange={(e) =>
+                      handleLineItemChange(index, "description", e.target.value)
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Item description"
                   />
@@ -486,7 +534,13 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
                   <input
                     type="number"
                     value={item.quantity}
-                    onChange={(e) => handleLineItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLineItemChange(
+                        index,
+                        "quantity",
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     step="0.01"
@@ -500,7 +554,13 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
                   <input
                     type="number"
                     value={item.unitPrice}
-                    onChange={(e) => handleLineItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLineItemChange(
+                        index,
+                        "unitPrice",
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     step="0.01"
@@ -513,7 +573,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
                   </label>
                   <select
                     value={item.unit}
-                    onChange={(e) => handleLineItemChange(index, 'unit', e.target.value)}
+                    onChange={(e) =>
+                      handleLineItemChange(index, "unit", e.target.value)
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="each">Each</option>
@@ -556,7 +618,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
                 <input
                   type="text"
                   value={item.notes}
-                  onChange={(e) => handleLineItemChange(index, 'notes', e.target.value)}
+                  onChange={(e) =>
+                    handleLineItemChange(index, "notes", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Additional notes for this item"
                 />
@@ -568,8 +632,10 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
 
       {/* Pricing Details */}
       <div className="bg-gray-50 p-4 rounded-lg">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing Details</h3>
-        
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Pricing Details
+        </h3>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -577,7 +643,12 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             </label>
             <select
               value={formData.discountType}
-              onChange={(e) => setFormData(prev => ({ ...prev, discountType: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  discountType: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="amount">Fixed Amount</option>
@@ -587,12 +658,17 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Discount {formData.discountType === 'percentage' ? '(%)' : '($)'}
+              Discount {formData.discountType === "percentage" ? "(%)" : "($)"}
             </label>
             <input
               type="number"
               value={formData.discountAmount}
-              onChange={(e) => setFormData(prev => ({ ...prev, discountAmount: parseFloat(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  discountAmount: parseFloat(e.target.value) || 0,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               min="0"
               step="0.01"
@@ -606,7 +682,12 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             <input
               type="number"
               value={formData.taxRate}
-              onChange={(e) => setFormData(prev => ({ ...prev, taxRate: parseFloat(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  taxRate: parseFloat(e.target.value) || 0,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               min="0"
               max="100"
@@ -625,7 +706,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
             {totals.discount > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-600">Discount:</span>
-                <span className="font-medium text-red-600">-${totals.discount.toFixed(2)}</span>
+                <span className="font-medium text-red-600">
+                  -${totals.discount.toFixed(2)}
+                </span>
               </div>
             )}
             {totals.tax > 0 && (
@@ -649,7 +732,9 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
         </label>
         <textarea
           value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, notes: e.target.value }))
+          }
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Internal notes (not visible to client)"
@@ -658,11 +743,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
 
       {/* Form Actions */}
       <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-        <Button
-          type="button"
-          onClick={onCancel}
-          variant="outline"
-        >
+        <Button type="button" onClick={onCancel} variant="outline">
           Cancel
         </Button>
         <Button
@@ -673,10 +754,12 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
           {loading ? (
             <>
               <LoadingSpinner size="sm" className="mr-2" />
-              {estimate ? 'Updating...' : 'Creating...'}
+              {estimate ? "Updating..." : "Creating..."}
             </>
+          ) : estimate ? (
+            "Update Estimate"
           ) : (
-            estimate ? 'Update Estimate' : 'Create Estimate'
+            "Create Estimate"
           )}
         </Button>
       </div>
@@ -684,4 +767,4 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
   );
 };
 
-export default EstimateForm; 
+export { EstimateForm };

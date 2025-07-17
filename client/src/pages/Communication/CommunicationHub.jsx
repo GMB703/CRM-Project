@@ -1,33 +1,36 @@
-import React, { useState } from 'react';
-import { Tab } from '@headlessui/react';
-import TeamChat from './components/TeamChat';
-import EmailIntegration from './components/EmailIntegration';
-import SMSIntegration from './components/SMSIntegration';
-import InternalNotes from './components/InternalNotes';
-import ClientPortalMessages from './components/ClientPortalMessages';
+import React, { useState } from "react";
+import { Tab } from "@headlessui/react";
+import { ClientPortalMessages } from './components/ClientPortalMessages.jsx';
+import { TeamChat } from './components/TeamChat.jsx';
+import { EmailIntegration } from './components/EmailIntegration.jsx';
+import { SMSIntegration } from './components/SMSIntegration.jsx';
+import { InternalNotes } from './components/InternalNotes.jsx';
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(' ');
+  return classes.filter(Boolean).join(" ");
 }
 
 const CommunicationHub = () => {
   const [selectedTab, setSelectedTab] = useState(0);
 
   const tabs = [
-    { name: 'Team Chat', component: TeamChat },
-    { name: 'Email', component: EmailIntegration },
-    { name: 'SMS', component: SMSIntegration },
-    { name: 'Internal Notes', component: InternalNotes },
-    { name: 'Client Messages', component: ClientPortalMessages },
+    { name: "Team Chat", component: TeamChat },
+    { name: "Email", component: EmailIntegration },
+    { name: "SMS", component: SMSIntegration },
+    { name: "Internal Notes", component: InternalNotes },
+    { name: "Client Messages", component: ClientPortalMessages },
   ];
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Communication Hub</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Communication Hub
+          </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Manage all your communications in one place - team chat, emails, SMS, and client messages.
+            Manage all your communications in one place - team chat, emails,
+            SMS, and client messages.
           </p>
         </div>
       </div>
@@ -40,11 +43,11 @@ const CommunicationHub = () => {
                 key={tab.name}
                 className={({ selected }) =>
                   classNames(
-                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
-                    'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                    "w-full rounded-lg py-2.5 text-sm font-medium leading-5",
+                    "ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2",
                     selected
-                      ? 'bg-white text-blue-700 shadow'
-                      : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                      ? "bg-white text-blue-700 shadow"
+                      : "text-blue-100 hover:bg-white/[0.12] hover:text-white",
                   )
                 }
               >
@@ -57,8 +60,8 @@ const CommunicationHub = () => {
               <Tab.Panel
                 key={idx}
                 className={classNames(
-                  'rounded-xl bg-white p-3',
-                  'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+                  "rounded-xl bg-white p-3",
+                  "ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2",
                 )}
               >
                 <tab.component />
@@ -71,4 +74,4 @@ const CommunicationHub = () => {
   );
 };
 
-export default CommunicationHub; 
+export { CommunicationHub };

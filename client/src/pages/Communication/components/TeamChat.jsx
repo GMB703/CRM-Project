@@ -1,18 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
-import { PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
-import LoadingSpinner from '../../../components/UI/LoadingSpinner';
+import React, { useState, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
+import { PaperAirplaneIcon, PaperClipIcon } from "@heroicons/react/24/outline";
+import { LoadingSpinner } from "../../../components/UI/LoadingSpinner.jsx";
 
 const TeamChat = () => {
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  
+
   const user = useSelector((state) => state.auth?.user);
-  const currentOrganization = useSelector((state) => state.organization?.currentOrganization);
+  const currentOrganization = useSelector(
+    (state) => state.organization?.currentOrganization,
+  );
 
   // Sample messages for demo
   useEffect(() => {
@@ -22,27 +24,31 @@ const TeamChat = () => {
       setMessages([
         {
           id: 1,
-          content: "Welcome to the team chat! This is where you can communicate with your team members.",
-          userId: 'system',
-          user: { name: 'System', email: 'system@crm.com' },
-          type: 'TEXT',
-          createdAt: new Date().toISOString()
+          content:
+            "Welcome to the team chat! This is where you can communicate with your team members.",
+          userId: "system",
+          user: { name: "System", email: "system@crm.com" },
+          type: "TEXT",
+          createdAt: new Date().toISOString(),
         },
         {
           id: 2,
           content: "Great! The CRM system is looking good.",
-          userId: user?.id || 'demo-user',
-          user: { name: user?.name || 'Demo User', email: user?.email || 'demo@example.com' },
-          type: 'TEXT',
-          createdAt: new Date().toISOString()
-        }
+          userId: user?.id || "demo-user",
+          user: {
+            name: user?.name || "Demo User",
+            email: user?.email || "demo@example.com",
+          },
+          type: "TEXT",
+          createdAt: new Date().toISOString(),
+        },
       ]);
       setIsLoading(false);
     }, 1000);
   }, [user]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -56,20 +62,20 @@ const TeamChat = () => {
     const messageData = {
       id: Date.now(),
       content: newMessage,
-      userId: user?.id || 'demo-user',
-      user: { 
-        name: user?.name || 'Demo User', 
-        email: user?.email || 'demo@example.com' 
+      userId: user?.id || "demo-user",
+      user: {
+        name: user?.name || "Demo User",
+        email: user?.email || "demo@example.com",
       },
-      type: 'TEXT',
-      createdAt: new Date().toISOString()
+      type: "TEXT",
+      createdAt: new Date().toISOString(),
     };
 
     try {
       // Add message to local state immediately for demo
-      setMessages(prev => [...prev, messageData]);
-      setNewMessage('');
-      
+      setMessages((prev) => [...prev, messageData]);
+      setNewMessage("");
+
       // In a real app, this would send to the server
       // const response = await fetch('/api/chat/messages', {
       //   method: 'POST',
@@ -80,8 +86,8 @@ const TeamChat = () => {
       //   body: JSON.stringify(messageData),
       // });
     } catch (error) {
-      console.error('Error sending message:', error);
-      setError('Failed to send message. Please try again.');
+      console.error("Error sending message:", error);
+      setError("Failed to send message. Please try again.");
     }
   };
 
@@ -93,25 +99,25 @@ const TeamChat = () => {
       const messageData = {
         id: Date.now(),
         content: `Shared file: ${file.name}`,
-        userId: user?.id || 'demo-user',
-        user: { 
-          name: user?.name || 'Demo User', 
-          email: user?.email || 'demo@example.com' 
+        userId: user?.id || "demo-user",
+        user: {
+          name: user?.name || "Demo User",
+          email: user?.email || "demo@example.com",
         },
-        type: 'FILE',
+        type: "FILE",
         fileName: file.name,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
-      setMessages(prev => [...prev, messageData]);
-      
+      setMessages((prev) => [...prev, messageData]);
+
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
-      setError('Failed to upload file. Please try again.');
+      console.error("Error uploading file:", error);
+      setError("Failed to upload file. Please try again.");
     }
   };
 
@@ -127,7 +133,7 @@ const TeamChat = () => {
     return (
       <div className="text-center py-10">
         <p className="text-red-500 mb-4">{error}</p>
-        <button 
+        <button
           onClick={() => setError(null)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
@@ -143,7 +149,7 @@ const TeamChat = () => {
       <div className="p-4 border-b bg-gray-50">
         <h3 className="text-lg font-medium text-gray-900">Team Chat</h3>
         <p className="text-sm text-gray-600">
-          Organization: {currentOrganization?.name || 'Demo Organization'}
+          Organization: {currentOrganization?.name || "Demo Organization"}
         </p>
       </div>
 
@@ -153,24 +159,28 @@ const TeamChat = () => {
           <div
             key={message.id}
             className={`flex ${
-              message.userId === (user?.id || 'demo-user') ? 'justify-end' : 'justify-start'
+              message.userId === (user?.id || "demo-user")
+                ? "justify-end"
+                : "justify-start"
             }`}
           >
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
-                message.userId === (user?.id || 'demo-user')
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                message.userId === (user?.id || "demo-user")
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-900"
               }`}
             >
               <div className="text-sm font-medium mb-1">
-                {message.user?.name || 'Unknown User'}
+                {message.user?.name || "Unknown User"}
               </div>
-              {message.type === 'TEXT' ? (
+              {message.type === "TEXT" ? (
                 <p className="whitespace-pre-wrap">{message.content}</p>
               ) : (
                 <div>
-                  <p className="text-sm opacity-75">📎 {message.fileName || 'File attachment'}</p>
+                  <p className="text-sm opacity-75">
+                    📎 {message.fileName || "File attachment"}
+                  </p>
                   <p>{message.content}</p>
                 </div>
               )}
@@ -222,4 +232,4 @@ const TeamChat = () => {
   );
 };
 
-export default TeamChat; 
+export { TeamChat };

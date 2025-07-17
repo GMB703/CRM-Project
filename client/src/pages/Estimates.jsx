@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -14,23 +14,23 @@ import {
   XCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
-import { useAuth } from '../hooks/useAuth';
-import { useOrganization } from '../contexts/OrganizationContext';
-import LoadingSpinner from '../components/UI/LoadingSpinner';
-import Modal from '../components/UI/Modal';
-import Button from '../components/UI/Button';
-import EstimateForm from '../components/Estimates/EstimateForm';
-import EstimateViewer from '../components/Estimates/EstimateViewer';
-import api from '../services/api';
+} from "@heroicons/react/24/outline";
+import { useAuth } from "../hooks/useAuth";
+import { useOrganization } from "../contexts/OrganizationContext.jsx";
+import { LoadingSpinner } from "../components/UI/LoadingSpinner.jsx";
+import { Modal } from "../components/UI/Modal.jsx";
+import { Button } from "../components/UI/Button.jsx";
+import { EstimateForm } from "../components/Estimates/EstimateForm.jsx";
+import { EstimateViewer } from "../components/Estimates/EstimateViewer.jsx";
+import { api } from "../services/api";
 
 const Estimates = () => {
   const { user } = useAuth();
   const { currentOrganization } = useOrganization();
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -41,11 +41,11 @@ const Estimates = () => {
   const fetchEstimates = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/estimates');
+      const response = await api.get("/estimates");
       setEstimates(response.data.data || []);
     } catch (error) {
-      console.error('Error fetching estimates:', error);
-      toast.error('Failed to load estimates');
+      console.error("Error fetching estimates:", error);
+      toast.error("Failed to load estimates");
     } finally {
       setLoading(false);
     }
@@ -58,26 +58,30 @@ const Estimates = () => {
   }, [currentOrganization]);
 
   // Filter estimates
-  const filteredEstimates = estimates.filter(estimate => {
-    const matchesSearch = estimate.estimateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         estimate.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         estimate.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || estimate.status === statusFilter;
-    
+  const filteredEstimates = estimates.filter((estimate) => {
+    const matchesSearch =
+      estimate.estimateNumber
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      estimate.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      estimate.title?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" || estimate.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
   // Handle create estimate
   const handleCreateEstimate = async (estimateData) => {
     try {
-      const response = await api.post('/estimates', estimateData);
-      setEstimates(prev => [response.data.data, ...prev]);
+      const response = await api.post("/estimates", estimateData);
+      setEstimates((prev) => [response.data.data, ...prev]);
       setShowCreateModal(false);
-      toast.success('Estimate created successfully');
+      toast.success("Estimate created successfully");
     } catch (error) {
-      console.error('Error creating estimate:', error);
-      toast.error('Failed to create estimate');
+      console.error("Error creating estimate:", error);
+      toast.error("Failed to create estimate");
       throw error;
     }
   };
@@ -85,34 +89,39 @@ const Estimates = () => {
   // Handle update estimate
   const handleUpdateEstimate = async (estimateData) => {
     try {
-      const response = await api.put(`/estimates/${selectedEstimate.id}`, estimateData);
-      setEstimates(prev => prev.map(est => 
-        est.id === selectedEstimate.id ? response.data.data : est
-      ));
+      const response = await api.put(
+        `/estimates/${selectedEstimate.id}`,
+        estimateData,
+      );
+      setEstimates((prev) =>
+        prev.map((est) =>
+          est.id === selectedEstimate.id ? response.data.data : est,
+        ),
+      );
       setShowEditModal(false);
       setSelectedEstimate(null);
-      toast.success('Estimate updated successfully');
+      toast.success("Estimate updated successfully");
     } catch (error) {
-      console.error('Error updating estimate:', error);
-      toast.error('Failed to update estimate');
+      console.error("Error updating estimate:", error);
+      toast.error("Failed to update estimate");
       throw error;
     }
   };
 
   // Handle delete estimate
   const handleDeleteEstimate = async (estimateId) => {
-    if (!window.confirm('Are you sure you want to delete this estimate?')) {
+    if (!window.confirm("Are you sure you want to delete this estimate?")) {
       return;
     }
 
     try {
       setActionLoading(estimateId);
       await api.delete(`/estimates/${estimateId}`);
-      setEstimates(prev => prev.filter(est => est.id !== estimateId));
-      toast.success('Estimate deleted successfully');
+      setEstimates((prev) => prev.filter((est) => est.id !== estimateId));
+      toast.success("Estimate deleted successfully");
     } catch (error) {
-      console.error('Error deleting estimate:', error);
-      toast.error('Failed to delete estimate');
+      console.error("Error deleting estimate:", error);
+      toast.error("Failed to delete estimate");
     } finally {
       setActionLoading(null);
     }
@@ -123,23 +132,23 @@ const Estimates = () => {
     try {
       setActionLoading(`pdf-${estimateId}`);
       const response = await api.get(`/estimates/${estimateId}/pdf`, {
-        responseType: 'blob'
+        responseType: "blob",
       });
 
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `estimate-${estimateId}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
-      toast.success('PDF downloaded successfully');
+
+      toast.success("PDF downloaded successfully");
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast.error('Failed to download PDF');
+      console.error("Error downloading PDF:", error);
+      toast.error("Failed to download PDF");
     } finally {
       setActionLoading(null);
     }
@@ -150,10 +159,10 @@ const Estimates = () => {
     try {
       setActionLoading(`email-${estimateId}`);
       await api.post(`/estimates/${estimateId}/email`);
-      toast.success('Estimate emailed successfully');
+      toast.success("Estimate emailed successfully");
     } catch (error) {
-      console.error('Error sending email:', error);
-      toast.error('Failed to send email');
+      console.error("Error sending email:", error);
+      toast.error("Failed to send email");
     } finally {
       setActionLoading(null);
     }
@@ -162,18 +171,23 @@ const Estimates = () => {
   // Status badge component
   const StatusBadge = ({ status }) => {
     const statusConfig = {
-      draft: { color: 'bg-gray-100 text-gray-800', icon: ClockIcon },
-      sent: { color: 'bg-blue-100 text-blue-800', icon: EnvelopeIcon },
-      approved: { color: 'bg-green-100 text-green-800', icon: CheckCircleIcon },
-      rejected: { color: 'bg-red-100 text-red-800', icon: XCircleIcon },
-      expired: { color: 'bg-yellow-100 text-yellow-800', icon: ExclamationTriangleIcon },
+      draft: { color: "bg-gray-100 text-gray-800", icon: ClockIcon },
+      sent: { color: "bg-blue-100 text-blue-800", icon: EnvelopeIcon },
+      approved: { color: "bg-green-100 text-green-800", icon: CheckCircleIcon },
+      rejected: { color: "bg-red-100 text-red-800", icon: XCircleIcon },
+      expired: {
+        color: "bg-yellow-100 text-yellow-800",
+        icon: ExclamationTriangleIcon,
+      },
     };
 
     const config = statusConfig[status] || statusConfig.draft;
     const Icon = config.icon;
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}
+      >
         <Icon className="w-3 h-3 mr-1" />
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
@@ -260,9 +274,14 @@ const Estimates = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredEstimates.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td
+                    colSpan="6"
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
                     <DocumentTextIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-lg font-medium mb-2">No estimates found</p>
+                    <p className="text-lg font-medium mb-2">
+                      No estimates found
+                    </p>
                     <p>Get started by creating your first estimate</p>
                   </td>
                 </tr>
@@ -280,8 +299,12 @@ const Estimates = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{estimate.clientName}</div>
-                      <div className="text-sm text-gray-500">{estimate.clientEmail}</div>
+                      <div className="text-sm text-gray-900">
+                        {estimate.clientName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {estimate.clientEmail}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -428,4 +451,4 @@ const Estimates = () => {
   );
 };
 
-export default Estimates; 
+export { Estimates };

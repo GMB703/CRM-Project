@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   PencilIcon,
   DocumentArrowDownIcon,
@@ -12,30 +12,31 @@ import {
   XCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
-import { useOrganization } from '../../contexts/OrganizationContext';
-import LoadingSpinner from '../UI/LoadingSpinner';
-import Button from '../UI/Button';
+} from "@heroicons/react/24/outline";
+import { useOrganization } from "../../contexts/OrganizationContext.jsx";
+import { LoadingSpinner } from "../UI/LoadingSpinner.jsx";
+import { Button } from "../UI/Button.jsx";
 
-const EstimateViewer = ({ 
-  estimate, 
-  onClose, 
-  onEdit, 
-  onDownloadPDF, 
-  onEmail, 
-  actionLoading 
+const EstimateViewer = ({
+  estimate,
+  onClose,
+  onEdit,
+  onDownloadPDF,
+  onEmail,
+  actionLoading,
 }) => {
   const { currentOrganization } = useOrganization();
 
   if (!estimate) return null;
 
   // Calculate totals
-  const subtotal = estimate.lineItems?.reduce((sum, item) => {
-    return sum + (item.quantity * item.unitPrice);
-  }, 0) || 0;
+  const subtotal =
+    estimate.lineItems?.reduce((sum, item) => {
+      return sum + item.quantity * item.unitPrice;
+    }, 0) || 0;
 
   let discount = 0;
-  if (estimate.discountType === 'percentage') {
+  if (estimate.discountType === "percentage") {
     discount = subtotal * (estimate.discountAmount / 100);
   } else {
     discount = estimate.discountAmount || 0;
@@ -47,11 +48,31 @@ const EstimateViewer = ({
 
   // Status configuration
   const statusConfig = {
-    draft: { color: 'bg-gray-100 text-gray-800', icon: ClockIcon, label: 'Draft' },
-    sent: { color: 'bg-blue-100 text-blue-800', icon: EnvelopeIcon, label: 'Sent' },
-    approved: { color: 'bg-green-100 text-green-800', icon: CheckCircleIcon, label: 'Approved' },
-    rejected: { color: 'bg-red-100 text-red-800', icon: XCircleIcon, label: 'Rejected' },
-    expired: { color: 'bg-yellow-100 text-yellow-800', icon: ExclamationTriangleIcon, label: 'Expired' },
+    draft: {
+      color: "bg-gray-100 text-gray-800",
+      icon: ClockIcon,
+      label: "Draft",
+    },
+    sent: {
+      color: "bg-blue-100 text-blue-800",
+      icon: EnvelopeIcon,
+      label: "Sent",
+    },
+    approved: {
+      color: "bg-green-100 text-green-800",
+      icon: CheckCircleIcon,
+      label: "Approved",
+    },
+    rejected: {
+      color: "bg-red-100 text-red-800",
+      icon: XCircleIcon,
+      label: "Rejected",
+    },
+    expired: {
+      color: "bg-yellow-100 text-yellow-800",
+      icon: ExclamationTriangleIcon,
+      label: "Expired",
+    },
   };
 
   const statusInfo = statusConfig[estimate.status] || statusConfig.draft;
@@ -67,30 +88,28 @@ const EstimateViewer = ({
             <span className="text-sm text-gray-500">
               Estimate #{estimate.estimateNumber}
             </span>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}
+            >
               <StatusIcon className="w-3 h-3 mr-1" />
               {statusInfo.label}
             </span>
           </div>
         </div>
-        
+
         <div className="flex space-x-2">
-          <Button
-            onClick={onEdit}
-            variant="outline"
-            size="sm"
-          >
+          <Button onClick={onEdit} variant="outline" size="sm">
             <PencilIcon className="w-4 h-4 mr-2" />
             Edit
           </Button>
           <Button
             onClick={onDownloadPDF}
-            disabled={actionLoading?.includes('pdf')}
+            disabled={actionLoading?.includes("pdf")}
             variant="outline"
             size="sm"
             className="text-green-600 hover:text-green-800"
           >
-            {actionLoading?.includes('pdf') ? (
+            {actionLoading?.includes("pdf") ? (
               <LoadingSpinner size="sm" className="mr-2" />
             ) : (
               <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
@@ -99,12 +118,12 @@ const EstimateViewer = ({
           </Button>
           <Button
             onClick={onEmail}
-            disabled={actionLoading?.includes('email')}
+            disabled={actionLoading?.includes("email")}
             variant="outline"
             size="sm"
             className="text-purple-600 hover:text-purple-800"
           >
-            {actionLoading?.includes('email') ? (
+            {actionLoading?.includes("email") ? (
               <LoadingSpinner size="sm" className="mr-2" />
             ) : (
               <EnvelopeIcon className="w-4 h-4 mr-2" />
@@ -125,12 +144,12 @@ const EstimateViewer = ({
                 alt={currentOrganization.name}
                 className="h-12 w-auto mb-4"
                 onError={(e) => {
-                  e.target.style.display = 'none';
+                  e.target.style.display = "none";
                 }}
               />
             )}
             <div className="text-2xl font-bold text-gray-900">
-              {currentOrganization?.name || 'Your Company'}
+              {currentOrganization?.name || "Your Company"}
             </div>
             <div className="text-gray-600 mt-1">
               {currentOrganization?.address && (
@@ -144,14 +163,21 @@ const EstimateViewer = ({
               )}
             </div>
           </div>
-          
+
           <div className="text-right">
-            <div className="text-3xl font-bold text-blue-600 mb-2">ESTIMATE</div>
+            <div className="text-3xl font-bold text-blue-600 mb-2">
+              ESTIMATE
+            </div>
             <div className="text-sm text-gray-600">
               <div>Estimate #: {estimate.estimateNumber}</div>
-              <div>Date: {new Date(estimate.createdAt).toLocaleDateString()}</div>
+              <div>
+                Date: {new Date(estimate.createdAt).toLocaleDateString()}
+              </div>
               {estimate.validUntil && (
-                <div>Valid Until: {new Date(estimate.validUntil).toLocaleDateString()}</div>
+                <div>
+                  Valid Until:{" "}
+                  {new Date(estimate.validUntil).toLocaleDateString()}
+                </div>
               )}
             </div>
           </div>
@@ -208,7 +234,9 @@ const EstimateViewer = ({
         {/* Description */}
         {estimate.description && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Description
+            </h3>
             <div className="text-gray-700 whitespace-pre-wrap">
               {estimate.description}
             </div>
@@ -240,9 +268,13 @@ const EstimateViewer = ({
                 {estimate.lineItems?.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="border border-gray-300 px-4 py-3">
-                      <div className="font-medium text-gray-900">{item.description}</div>
+                      <div className="font-medium text-gray-900">
+                        {item.description}
+                      </div>
                       {item.notes && (
-                        <div className="text-sm text-gray-600 mt-1">{item.notes}</div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {item.notes}
+                        </div>
                       )}
                     </td>
                     <td className="border border-gray-300 px-4 py-3 text-right">
@@ -269,23 +301,31 @@ const EstimateViewer = ({
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="font-medium">${subtotal.toFixed(2)}</span>
               </div>
-              
+
               {discount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">
-                    Discount {estimate.discountType === 'percentage' ? `(${estimate.discountAmount}%)` : ''}:
+                    Discount{" "}
+                    {estimate.discountType === "percentage"
+                      ? `(${estimate.discountAmount}%)`
+                      : ""}
+                    :
                   </span>
-                  <span className="font-medium text-red-600">-${discount.toFixed(2)}</span>
+                  <span className="font-medium text-red-600">
+                    -${discount.toFixed(2)}
+                  </span>
                 </div>
               )}
-              
+
               {tax > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Tax ({estimate.taxRate}%):</span>
+                  <span className="text-gray-600">
+                    Tax ({estimate.taxRate}%):
+                  </span>
                   <span className="font-medium">${tax.toFixed(2)}</span>
                 </div>
               )}
-              
+
               <div className="border-t border-gray-200 pt-2">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
@@ -298,14 +338,25 @@ const EstimateViewer = ({
 
         {/* Terms and Conditions */}
         <div className="border-t border-gray-200 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Terms & Conditions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            Terms & Conditions
+          </h3>
           <div className="text-sm text-gray-600 space-y-2">
-            <p>• This estimate is valid for 30 days from the date issued unless otherwise specified.</p>
+            <p>
+              • This estimate is valid for 30 days from the date issued unless
+              otherwise specified.
+            </p>
             <p>• Prices are subject to change without notice.</p>
             <p>• Payment terms: Net 30 days upon acceptance of estimate.</p>
-            <p>• Work will commence upon signed approval and receipt of deposit if required.</p>
+            <p>
+              • Work will commence upon signed approval and receipt of deposit
+              if required.
+            </p>
             {estimate.validUntil && (
-              <p>• This estimate expires on {new Date(estimate.validUntil).toLocaleDateString()}.</p>
+              <p>
+                • This estimate expires on{" "}
+                {new Date(estimate.validUntil).toLocaleDateString()}.
+              </p>
             )}
           </div>
         </div>
@@ -313,7 +364,9 @@ const EstimateViewer = ({
         {/* Internal Notes (only visible in viewer, not in PDF) */}
         {estimate.notes && (
           <div className="border-t border-gray-200 pt-6 mt-6 bg-yellow-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Internal Notes</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Internal Notes
+            </h3>
             <div className="text-sm text-gray-700 whitespace-pre-wrap">
               {estimate.notes}
             </div>
@@ -331,10 +384,7 @@ const EstimateViewer = ({
 
       {/* Close Button */}
       <div className="flex justify-center mt-6">
-        <Button
-          onClick={onClose}
-          variant="outline"
-        >
+        <Button onClick={onClose} variant="outline">
           Close
         </Button>
       </div>
@@ -342,4 +392,4 @@ const EstimateViewer = ({
   );
 };
 
-export default EstimateViewer;
+export { EstimateViewer };

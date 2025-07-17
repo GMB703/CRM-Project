@@ -1,6 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { auth as authMiddleware } from '../middleware/auth.js';
+import { isAuthenticated } from '../middleware/auth.js';
 import { createMultiTenantMiddleware } from '../middleware/multiTenant.js';
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const multiTenantMiddleware = createMultiTenantMiddleware();
 
 // Apply middleware to all routes
-router.use(authMiddleware);
+router.use(isAuthenticated);
 router.use(multiTenantMiddleware);
 
 // Get all clients for the current organization

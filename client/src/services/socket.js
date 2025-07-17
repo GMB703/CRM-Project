@@ -1,6 +1,6 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
-class SocketService {
+export class SocketService {
   constructor() {
     this.socket = null;
     this.isConnected = false;
@@ -20,13 +20,17 @@ class SocketService {
    */
   connect(token, organizationId) {
     // If already connected to the same organization, return existing socket
-    if (this.socket && this.isConnected && this.currentOrganizationId === organizationId) {
+    if (
+      this.socket &&
+      this.isConnected &&
+      this.currentOrganizationId === organizationId
+    ) {
       return this.socket;
     }
 
     // Disconnect existing socket if switching organizations
     if (this.socket && this.currentOrganizationId !== organizationId) {
-      console.log('🔄 Switching organizations, disconnecting current socket');
+      console.log("🔄 Switching organizations, disconnecting current socket");
       this.disconnect();
     }
 
@@ -34,20 +38,22 @@ class SocketService {
     this.currentOrganizationId = organizationId;
     this.isConnecting = true;
 
-    const serverUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    
-    console.log(`🔌 Connecting to Socket.IO server: ${serverUrl} (Org: ${organizationId})`);
+    const serverUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+    console.log(
+      `🔌 Connecting to Socket.IO server: ${serverUrl} (Org: ${organizationId})`,
+    );
 
     this.socket = io(serverUrl, {
       auth: {
-        token: token
+        token: token,
       },
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: this.reconnectDelay,
       timeout: 10000,
-      transports: ['websocket', 'polling']
+      transports: ["websocket", "polling"],
     });
 
     this.setupEventListeners();
@@ -61,75 +67,83 @@ class SocketService {
     if (!this.socket) return;
 
     // Connection events
-    this.socket.on('connect', () => {
-      console.log('✅ Socket connected successfully');
+    this.socket.on("connect", () => {
+      console.log("✅ Socket connected successfully");
       this.isConnected = true;
       this.isConnecting = false;
       this.reconnectAttempts = 0;
-      this.emit('socket:connected', { organizationId: this.currentOrganizationId });
+      this.emit("socket:connected", {
+        organizationId: this.currentOrganizationId,
+      });
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message);
+    this.socket.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error.message);
       this.isConnected = false;
       this.isConnecting = false;
-      this.emit('socket:error', { error: error.message, organizationId: this.currentOrganizationId });
+      this.emit("socket:error", {
+        error: error.message,
+        organizationId: this.currentOrganizationId,
+      });
     });
 
-    this.socket.on('disconnect', (reason) => {
-      console.log('🔌 Socket disconnected:', reason);
+    this.socket.on("disconnect", (reason) => {
+      console.log("🔌 Socket disconnected:", reason);
       this.isConnected = false;
       this.isConnecting = false;
-      this.emit('socket:disconnected', { reason, organizationId: this.currentOrganizationId });
+      this.emit("socket:disconnected", {
+        reason,
+        organizationId: this.currentOrganizationId,
+      });
     });
 
     // Organization-specific events
-    this.socket.on('org:message', (data) => {
-      console.log('📢 Organization message received:', data);
-      this.emit('org:message', data);
+    this.socket.on("org:message", (data) => {
+      console.log("📢 Organization message received:", data);
+      this.emit("org:message", data);
     });
 
-    this.socket.on('private:message', (data) => {
-      console.log('💬 Private message received:', data);
-      this.emit('private:message', data);
+    this.socket.on("private:message", (data) => {
+      console.log("💬 Private message received:", data);
+      this.emit("private:message", data);
     });
 
-    this.socket.on('private:message:sent', (data) => {
-      console.log('✅ Private message sent confirmation:', data);
-      this.emit('private:message:sent', data);
+    this.socket.on("private:message:sent", (data) => {
+      console.log("✅ Private message sent confirmation:", data);
+      this.emit("private:message:sent", data);
     });
 
-    this.socket.on('org:update', (data) => {
-      console.log('📊 Organization update received:', data);
-      this.emit('org:update', data);
+    this.socket.on("org:update", (data) => {
+      console.log("📊 Organization update received:", data);
+      this.emit("org:update", data);
     });
 
     // User connection events
-    this.socket.on('user:connected', (data) => {
-      console.log('👤 User connected to organization:', data);
-      this.emit('user:connected', data);
+    this.socket.on("user:connected", (data) => {
+      console.log("👤 User connected to organization:", data);
+      this.emit("user:connected", data);
     });
 
-    this.socket.on('user:disconnected', (data) => {
-      console.log('👤 User disconnected from organization:', data);
-      this.emit('user:disconnected', data);
+    this.socket.on("user:disconnected", (data) => {
+      console.log("👤 User disconnected from organization:", data);
+      this.emit("user:disconnected", data);
     });
 
     // Room events
-    this.socket.on('room:joined', (data) => {
-      console.log('👥 Joined room:', data);
-      this.emit('room:joined', data);
+    this.socket.on("room:joined", (data) => {
+      console.log("👥 Joined room:", data);
+      this.emit("room:joined", data);
     });
 
-    this.socket.on('room:left', (data) => {
-      console.log('👋 Left room:', data);
-      this.emit('room:left', data);
+    this.socket.on("room:left", (data) => {
+      console.log("👋 Left room:", data);
+      this.emit("room:left", data);
     });
 
     // Error handling
-    this.socket.on('error', (data) => {
-      console.error('⚠️ Socket error:', data);
-      this.emit('socket:error', data);
+    this.socket.on("error", (data) => {
+      console.error("⚠️ Socket error:", data);
+      this.emit("socket:error", data);
     });
   }
 
@@ -138,7 +152,7 @@ class SocketService {
    */
   disconnect() {
     if (this.socket) {
-      console.log('🔌 Disconnecting socket');
+      console.log("🔌 Disconnecting socket");
       this.socket.disconnect();
       this.socket = null;
     }
@@ -155,18 +169,18 @@ class SocketService {
    */
   sendOrgMessage(message, metadata = {}) {
     if (!this.isConnected || !this.socket) {
-      console.warn('⚠️ Cannot send org message: Socket not connected');
+      console.warn("⚠️ Cannot send org message: Socket not connected");
       return false;
     }
 
     const messageData = {
       message,
       ...metadata,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
-    console.log('📢 Sending organization message:', messageData);
-    this.socket.emit('org:message', messageData);
+    console.log("📢 Sending organization message:", messageData);
+    this.socket.emit("org:message", messageData);
     return true;
   }
 
@@ -178,12 +192,14 @@ class SocketService {
    */
   sendPrivateMessage(recipientId, message, metadata = {}) {
     if (!this.isConnected || !this.socket) {
-      console.warn('⚠️ Cannot send private message: Socket not connected');
+      console.warn("⚠️ Cannot send private message: Socket not connected");
       return false;
     }
 
     if (!recipientId || !message) {
-      console.warn('⚠️ Cannot send private message: Missing recipient or message');
+      console.warn(
+        "⚠️ Cannot send private message: Missing recipient or message",
+      );
       return false;
     }
 
@@ -191,11 +207,11 @@ class SocketService {
       recipientId,
       message,
       ...metadata,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     console.log(`💬 Sending private message to ${recipientId}:`, messageData);
-    this.socket.emit('private:message', messageData);
+    this.socket.emit("private:message", messageData);
     return true;
   }
 
@@ -205,17 +221,17 @@ class SocketService {
    */
   sendOrgUpdate(updateData) {
     if (!this.isConnected || !this.socket) {
-      console.warn('⚠️ Cannot send org update: Socket not connected');
+      console.warn("⚠️ Cannot send org update: Socket not connected");
       return false;
     }
 
     const data = {
       ...updateData,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
-    console.log('📊 Sending organization update:', data);
-    this.socket.emit('org:update', data);
+    console.log("📊 Sending organization update:", data);
+    this.socket.emit("org:update", data);
     return true;
   }
 
@@ -225,12 +241,12 @@ class SocketService {
    */
   joinRoom(roomId) {
     if (!this.isConnected || !this.socket) {
-      console.warn('⚠️ Cannot join room: Socket not connected');
+      console.warn("⚠️ Cannot join room: Socket not connected");
       return false;
     }
 
     console.log(`👥 Joining room: ${roomId}`);
-    this.socket.emit('join_room', roomId);
+    this.socket.emit("join_room", roomId);
     return true;
   }
 
@@ -240,12 +256,12 @@ class SocketService {
    */
   leaveRoom(roomId) {
     if (!this.isConnected || !this.socket) {
-      console.warn('⚠️ Cannot leave room: Socket not connected');
+      console.warn("⚠️ Cannot leave room: Socket not connected");
       return false;
     }
 
     console.log(`👋 Leaving room: ${roomId}`);
-    this.socket.emit('leave_room', roomId);
+    this.socket.emit("leave_room", roomId);
     return true;
   }
 
@@ -279,7 +295,7 @@ class SocketService {
    */
   emit(event, data) {
     if (this.eventListeners.has(event)) {
-      this.eventListeners.get(event).forEach(callback => {
+      this.eventListeners.get(event).forEach((callback) => {
         try {
           callback(data);
         } catch (error) {
@@ -297,7 +313,7 @@ class SocketService {
       isConnected: this.isConnected,
       isConnecting: this.isConnecting,
       organizationId: this.currentOrganizationId,
-      socketId: this.socket?.id || null
+      socketId: this.socket?.id || null,
     };
   }
 
@@ -311,7 +327,5 @@ class SocketService {
   }
 }
 
-// Create singleton instance
-const socketService = new SocketService();
-
-export default socketService; 
+// Create and export a singleton instance
+export const socketService = new SocketService();

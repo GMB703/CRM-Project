@@ -1,13 +1,13 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from "@reduxjs/toolkit";
 
 // Initial state
 const initialState = {
   search: {
-    clients: '',
-    projects: '',
-    tasks: '',
-    estimates: '',
-    invoices: '',
+    clients: "",
+    projects: "",
+    tasks: "",
+    estimates: "",
+    invoices: "",
   },
   filters: {
     clients: {
@@ -44,25 +44,25 @@ const initialState = {
     },
   },
   view: {
-    clients: 'table', // 'table', 'grid', 'kanban'
-    projects: 'table',
-    tasks: 'kanban', // 'table', 'list', 'kanban'
-    estimates: 'table',
-    invoices: 'table',
+    clients: "table", // 'table', 'grid', 'kanban'
+    projects: "table",
+    tasks: "kanban", // 'table', 'list', 'kanban'
+    estimates: "table",
+    invoices: "table",
   },
   columns: {
-    clients: ['name', 'email', 'phone', 'status', 'source', 'createdAt'],
-    projects: ['name', 'client', 'status', 'stage', 'budget', 'startDate'],
-    tasks: ['title', 'project', 'assignee', 'status', 'priority', 'dueDate'],
-    estimates: ['title', 'client', 'amount', 'status', 'createdAt'],
-    invoices: ['number', 'client', 'amount', 'status', 'dueDate'],
+    clients: ["name", "email", "phone", "status", "source", "createdAt"],
+    projects: ["name", "client", "status", "stage", "budget", "startDate"],
+    tasks: ["title", "project", "assignee", "status", "priority", "dueDate"],
+    estimates: ["title", "client", "amount", "status", "createdAt"],
+    invoices: ["number", "client", "amount", "status", "dueDate"],
   },
   sort: {
-    clients: { field: 'createdAt', direction: 'desc' },
-    projects: { field: 'updatedAt', direction: 'desc' },
-    tasks: { field: 'dueDate', direction: 'asc' },
-    estimates: { field: 'createdAt', direction: 'desc' },
-    invoices: { field: 'createdAt', direction: 'desc' },
+    clients: { field: "createdAt", direction: "desc" },
+    projects: { field: "updatedAt", direction: "desc" },
+    tasks: { field: "dueDate", direction: "asc" },
+    estimates: { field: "createdAt", direction: "desc" },
+    invoices: { field: "createdAt", direction: "desc" },
   },
   pagination: {
     clients: { page: 1, limit: 10, total: 0 },
@@ -73,196 +73,212 @@ const initialState = {
   },
   savedFilters: [],
   activeSavedFilter: null,
-}
+};
 
 // Filter slice
 const filterSlice = createSlice({
-  name: 'filters',
+  name: "filters",
   initialState,
   reducers: {
     // Search actions
     setSearch: (state, action) => {
-      const { entity, value } = action.payload
-      if (state.search.hasOwnProperty(entity)) {
-        state.search[entity] = value
+      const { entity, value } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.search, entity)) {
+        state.search[entity] = value;
         // Reset pagination when search changes
-        state.pagination[entity].page = 1
+        state.pagination[entity].page = 1;
       }
     },
     clearSearch: (state, action) => {
-      const { entity } = action.payload
-      if (state.search.hasOwnProperty(entity)) {
-        state.search[entity] = ''
-        state.pagination[entity].page = 1
+      const { entity } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.search, entity)) {
+        state.search[entity] = "";
+        state.pagination[entity].page = 1;
       }
     },
     clearAllSearch: (state) => {
-      Object.keys(state.search).forEach(key => {
-        state.search[key] = ''
-        state.pagination[key].page = 1
-      })
+      Object.keys(state.search).forEach((key) => {
+        state.search[key] = "";
+        state.pagination[key].page = 1;
+      });
     },
 
     // Filter actions
     setFilter: (state, action) => {
-      const { entity, filterKey, value } = action.payload
-      if (state.filters.hasOwnProperty(entity) && state.filters[entity].hasOwnProperty(filterKey)) {
-        state.filters[entity][filterKey] = value
-        state.pagination[entity].page = 1
+      const { entity, filterKey, value } = action.payload;
+      if (
+        Object.prototype.hasOwnProperty.call(state.filters, entity) &&
+        Object.prototype.hasOwnProperty.call(state.filters[entity], filterKey)
+      ) {
+        state.filters[entity][filterKey] = value;
+        state.pagination[entity].page = 1;
       }
     },
     addFilter: (state, action) => {
-      const { entity, filterKey, value } = action.payload
-      if (state.filters.hasOwnProperty(entity) && state.filters[entity].hasOwnProperty(filterKey)) {
+      const { entity, filterKey, value } = action.payload;
+      if (
+        Object.prototype.hasOwnProperty.call(state.filters, entity) &&
+        Object.prototype.hasOwnProperty.call(state.filters[entity], filterKey)
+      ) {
         if (Array.isArray(state.filters[entity][filterKey])) {
           if (!state.filters[entity][filterKey].includes(value)) {
-            state.filters[entity][filterKey].push(value)
+            state.filters[entity][filterKey].push(value);
           }
         } else {
-          state.filters[entity][filterKey] = value
+          state.filters[entity][filterKey] = value;
         }
-        state.pagination[entity].page = 1
+        state.pagination[entity].page = 1;
       }
     },
     removeFilter: (state, action) => {
-      const { entity, filterKey, value } = action.payload
-      if (state.filters.hasOwnProperty(entity) && state.filters[entity].hasOwnProperty(filterKey)) {
+      const { entity, filterKey, value } = action.payload;
+      if (
+        Object.prototype.hasOwnProperty.call(state.filters, entity) &&
+        Object.prototype.hasOwnProperty.call(state.filters[entity], filterKey)
+      ) {
         if (Array.isArray(state.filters[entity][filterKey])) {
-          state.filters[entity][filterKey] = state.filters[entity][filterKey].filter(v => v !== value)
+          state.filters[entity][filterKey] = state.filters[entity][
+            filterKey
+          ].filter((v) => v !== value);
         } else {
-          state.filters[entity][filterKey] = null
+          state.filters[entity][filterKey] = null;
         }
-        state.pagination[entity].page = 1
+        state.pagination[entity].page = 1;
       }
     },
     clearFilters: (state, action) => {
-      const { entity } = action.payload
-      if (state.filters.hasOwnProperty(entity)) {
-        Object.keys(state.filters[entity]).forEach(key => {
+      const { entity } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.filters, entity)) {
+        Object.keys(state.filters[entity]).forEach((key) => {
           if (Array.isArray(state.filters[entity][key])) {
-            state.filters[entity][key] = []
+            state.filters[entity][key] = [];
           } else {
-            state.filters[entity][key] = null
+            state.filters[entity][key] = null;
           }
-        })
-        state.pagination[entity].page = 1
+        });
+        state.pagination[entity].page = 1;
       }
     },
     clearAllFilters: (state) => {
-      Object.keys(state.filters).forEach(entity => {
-        Object.keys(state.filters[entity]).forEach(key => {
+      Object.keys(state.filters).forEach((entity) => {
+        Object.keys(state.filters[entity]).forEach((key) => {
           if (Array.isArray(state.filters[entity][key])) {
-            state.filters[entity][key] = []
+            state.filters[entity][key] = [];
           } else {
-            state.filters[entity][key] = null
+            state.filters[entity][key] = null;
           }
-        })
-        state.pagination[entity].page = 1
-      })
+        });
+        state.pagination[entity].page = 1;
+      });
     },
 
     // View actions
     setView: (state, action) => {
-      const { entity, view } = action.payload
-      if (state.view.hasOwnProperty(entity)) {
-        state.view[entity] = view
+      const { entity, view } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.view, entity)) {
+        state.view[entity] = view;
       }
     },
 
     // Column actions
     setColumns: (state, action) => {
-      const { entity, columns } = action.payload
-      if (state.columns.hasOwnProperty(entity)) {
-        state.columns[entity] = columns
+      const { entity, columns } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.columns, entity)) {
+        state.columns[entity] = columns;
       }
     },
     toggleColumn: (state, action) => {
-      const { entity, column } = action.payload
-      if (state.columns.hasOwnProperty(entity)) {
-        const index = state.columns[entity].indexOf(column)
+      const { entity, column } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.columns, entity)) {
+        const index = state.columns[entity].indexOf(column);
         if (index > -1) {
-          state.columns[entity].splice(index, 1)
+          state.columns[entity].splice(index, 1);
         } else {
-          state.columns[entity].push(column)
+          state.columns[entity].push(column);
         }
       }
     },
 
     // Sort actions
     setSort: (state, action) => {
-      const { entity, field, direction } = action.payload
-      if (state.sort.hasOwnProperty(entity)) {
-        state.sort[entity] = { field, direction }
+      const { entity, field, direction } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.sort, entity)) {
+        state.sort[entity] = { field, direction };
       }
     },
 
     // Pagination actions
     setPagination: (state, action) => {
-      const { entity, pagination } = action.payload
-      if (state.pagination.hasOwnProperty(entity)) {
-        state.pagination[entity] = { ...state.pagination[entity], ...pagination }
+      const { entity, pagination } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.pagination, entity)) {
+        state.pagination[entity] = {
+          ...state.pagination[entity],
+          ...pagination,
+        };
       }
     },
     setPage: (state, action) => {
-      const { entity, page } = action.payload
-      if (state.pagination.hasOwnProperty(entity)) {
-        state.pagination[entity].page = page
+      const { entity, page } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.pagination, entity)) {
+        state.pagination[entity].page = page;
       }
     },
     setLimit: (state, action) => {
-      const { entity, limit } = action.payload
-      if (state.pagination.hasOwnProperty(entity)) {
-        state.pagination[entity].limit = limit
-        state.pagination[entity].page = 1
+      const { entity, limit } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.pagination, entity)) {
+        state.pagination[entity].limit = limit;
+        state.pagination[entity].page = 1;
       }
     },
     resetPagination: (state, action) => {
-      const { entity } = action.payload
-      if (state.pagination.hasOwnProperty(entity)) {
-        state.pagination[entity] = { page: 1, limit: 10, total: 0 }
+      const { entity } = action.payload;
+      if (Object.prototype.hasOwnProperty.call(state.pagination, entity)) {
+        state.pagination[entity] = { page: 1, limit: 10, total: 0 };
       }
     },
 
     // Saved filters actions
     saveFilter: (state, action) => {
-      const { name, entity, filters, search, sort } = action.payload
+      const { name, entity, filters, search, sort } = action.payload;
       const savedFilter = {
         id: Date.now(),
         name,
         entity,
         filters: { ...filters },
-        search: search || '',
+        search: search || "",
         sort: { ...sort },
         createdAt: new Date().toISOString(),
-      }
-      state.savedFilters.push(savedFilter)
+      };
+      state.savedFilters.push(savedFilter);
     },
     deleteSavedFilter: (state, action) => {
-      state.savedFilters = state.savedFilters.filter(filter => filter.id !== action.payload)
+      state.savedFilters = state.savedFilters.filter(
+        (filter) => filter.id !== action.payload,
+      );
       if (state.activeSavedFilter === action.payload) {
-        state.activeSavedFilter = null
+        state.activeSavedFilter = null;
       }
     },
     applySavedFilter: (state, action) => {
-      const filter = state.savedFilters.find(f => f.id === action.payload)
+      const filter = state.savedFilters.find((f) => f.id === action.payload);
       if (filter) {
-        state.filters[filter.entity] = { ...filter.filters }
-        state.search[filter.entity] = filter.search
-        state.sort[filter.entity] = { ...filter.sort }
-        state.pagination[filter.entity].page = 1
-        state.activeSavedFilter = filter.id
+        state.filters[filter.entity] = { ...filter.filters };
+        state.search[filter.entity] = filter.search;
+        state.sort[filter.entity] = { ...filter.sort };
+        state.pagination[filter.entity].page = 1;
+        state.activeSavedFilter = filter.id;
       }
     },
     clearActiveSavedFilter: (state) => {
-      state.activeSavedFilter = null
+      state.activeSavedFilter = null;
     },
 
     // Reset all filters
     resetAllFilters: (state) => {
-      return initialState
+      return initialState;
     },
   },
-})
+});
 
 // Export actions
 export const {
@@ -287,19 +303,22 @@ export const {
   applySavedFilter,
   clearActiveSavedFilter,
   resetAllFilters,
-} = filterSlice.actions
+} = filterSlice.actions;
 
 // Export selectors
-export const selectFilters = (state) => state.filters
-export const selectSearch = (state) => state.filters.search
-export const selectFiltersByEntity = (entity) => (state) => state.filters.filters[entity]
-export const selectSearchByEntity = (entity) => (state) => state.filters.search[entity]
-export const selectView = (state) => state.filters.view
-export const selectColumns = (state) => state.filters.columns
-export const selectSort = (state) => state.filters.sort
-export const selectPagination = (state) => state.filters.pagination
-export const selectSavedFilters = (state) => state.filters.savedFilters
-export const selectActiveSavedFilter = (state) => state.filters.activeSavedFilter
+export const selectFilters = (state) => state.filters;
+export const selectSearch = (state) => state.filters.search;
+export const selectFiltersByEntity = (entity) => (state) =>
+  state.filters.filters[entity];
+export const selectSearchByEntity = (entity) => (state) =>
+  state.filters.search[entity];
+export const selectView = (state) => state.filters.view;
+export const selectColumns = (state) => state.filters.columns;
+export const selectSort = (state) => state.filters.sort;
+export const selectPagination = (state) => state.filters.pagination;
+export const selectSavedFilters = (state) => state.filters.savedFilters;
+export const selectActiveSavedFilter = (state) =>
+  state.filters.activeSavedFilter;
 
 // Helper selectors
 export const selectEntityFilters = (entity) => (state) => ({
@@ -309,19 +328,19 @@ export const selectEntityFilters = (entity) => (state) => ({
   columns: state.filters.columns[entity],
   sort: state.filters.sort[entity],
   pagination: state.filters.pagination[entity],
-})
+});
 
 export const selectHasActiveFilters = (entity) => (state) => {
-  const search = state.filters.search[entity]
-  const filters = state.filters.filters[entity]
-  
-  if (search) return true
-  
-  return Object.values(filters).some(value => {
-    if (Array.isArray(value)) return value.length > 0
-    return value !== null && value !== undefined
-  })
-}
+  const search = state.filters.search[entity];
+  const filters = state.filters.filters[entity];
+
+  if (search) return true;
+
+  return Object.values(filters).some((value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    return value !== null && value !== undefined;
+  });
+};
 
 // Export reducer
-export default filterSlice.reducer 
+export { filterSlice };

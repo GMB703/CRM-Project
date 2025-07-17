@@ -1,37 +1,39 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { EnvelopeIcon, PaperClipIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { EnvelopeIcon, PaperClipIcon } from "@heroicons/react/24/outline";
 
 const EmailIntegration = () => {
   const [emails, setEmails] = useState([
     {
       id: 1,
-      from: 'client@example.com',
-      to: 'admin@acmeconst.com',
-      subject: 'Project Update Request',
-      body: 'Hi, could you please provide an update on our kitchen renovation project?',
+      from: "client@example.com",
+      to: "admin@acmeconst.com",
+      subject: "Project Update Request",
+      body: "Hi, could you please provide an update on our kitchen renovation project?",
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      read: false
+      read: false,
     },
     {
       id: 2,
-      from: 'admin@acmeconst.com',
-      to: 'client@example.com',
-      subject: 'Re: Project Update Request',
-      body: 'Thank you for your inquiry. Your project is progressing well and is on schedule.',
+      from: "admin@acmeconst.com",
+      to: "client@example.com",
+      subject: "Re: Project Update Request",
+      body: "Thank you for your inquiry. Your project is progressing well and is on schedule.",
       timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-      read: true
-    }
+      read: true,
+    },
   ]);
   const [newEmail, setNewEmail] = useState({
-    to: '',
-    subject: '',
-    body: ''
+    to: "",
+    subject: "",
+    body: "",
   });
   const [showCompose, setShowCompose] = useState(false);
 
   const user = useSelector((state) => state.auth?.user);
-  const currentOrganization = useSelector((state) => state.organization?.currentOrganization);
+  const currentOrganization = useSelector(
+    (state) => state.organization?.currentOrganization,
+  );
 
   const handleSendEmail = (e) => {
     e.preventDefault();
@@ -39,16 +41,16 @@ const EmailIntegration = () => {
 
     const emailData = {
       id: Date.now(),
-      from: user?.email || 'demo@example.com',
+      from: user?.email || "demo@example.com",
       to: newEmail.to,
       subject: newEmail.subject,
       body: newEmail.body,
       timestamp: new Date().toISOString(),
-      read: true
+      read: true,
     };
 
-    setEmails(prev => [emailData, ...prev]);
-    setNewEmail({ to: '', subject: '', body: '' });
+    setEmails((prev) => [emailData, ...prev]);
+    setNewEmail({ to: "", subject: "", body: "" });
     setShowCompose(false);
   };
 
@@ -57,7 +59,9 @@ const EmailIntegration = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Email Integration</h3>
+          <h3 className="text-lg font-medium text-gray-900">
+            Email Integration
+          </h3>
           <p className="text-sm text-gray-600">
             Manage email communications with clients and team members
           </p>
@@ -74,35 +78,49 @@ const EmailIntegration = () => {
       {/* Compose Email */}
       {showCompose && (
         <div className="bg-white border rounded-lg p-6">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Compose New Email</h4>
+          <h4 className="text-md font-medium text-gray-900 mb-4">
+            Compose New Email
+          </h4>
           <form onSubmit={handleSendEmail} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">To</label>
+              <label className="block text-sm font-medium text-gray-700">
+                To
+              </label>
               <input
                 type="email"
                 value={newEmail.to}
-                onChange={(e) => setNewEmail(prev => ({ ...prev, to: e.target.value }))}
+                onChange={(e) =>
+                  setNewEmail((prev) => ({ ...prev, to: e.target.value }))
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="recipient@example.com"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Subject</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Subject
+              </label>
               <input
                 type="text"
                 value={newEmail.subject}
-                onChange={(e) => setNewEmail(prev => ({ ...prev, subject: e.target.value }))}
+                onChange={(e) =>
+                  setNewEmail((prev) => ({ ...prev, subject: e.target.value }))
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="Email subject"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Message</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Message
+              </label>
               <textarea
                 value={newEmail.body}
-                onChange={(e) => setNewEmail(prev => ({ ...prev, body: e.target.value }))}
+                onChange={(e) =>
+                  setNewEmail((prev) => ({ ...prev, body: e.target.value }))
+                }
                 rows={6}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="Your message..."
@@ -140,7 +158,10 @@ const EmailIntegration = () => {
             </div>
           ) : (
             emails.map((email) => (
-              <div key={email.id} className={`p-4 hover:bg-gray-50 ${!email.read ? 'bg-blue-50' : ''}`}>
+              <div
+                key={email.id}
+                className={`p-4 hover:bg-gray-50 ${!email.read ? "bg-blue-50" : ""}`}
+              >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
@@ -148,9 +169,7 @@ const EmailIntegration = () => {
                         {email.from}
                       </span>
                       <span className="text-sm text-gray-500">→</span>
-                      <span className="text-sm text-gray-600">
-                        {email.to}
-                      </span>
+                      <span className="text-sm text-gray-600">{email.to}</span>
                       {!email.read && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           New
@@ -165,7 +184,8 @@ const EmailIntegration = () => {
                     </div>
                   </div>
                   <div className="ml-4 text-xs text-gray-500">
-                    {new Date(email.timestamp).toLocaleDateString()} {new Date(email.timestamp).toLocaleTimeString()}
+                    {new Date(email.timestamp).toLocaleDateString()}{" "}
+                    {new Date(email.timestamp).toLocaleTimeString()}
                   </div>
                 </div>
               </div>
@@ -185,7 +205,8 @@ const EmailIntegration = () => {
               Email Integration Status
             </h3>
             <p className="text-sm text-green-700 mt-1">
-              Email system is operational. Organization: {currentOrganization?.name || 'Demo Organization'}
+              Email system is operational. Organization:{" "}
+              {currentOrganization?.name || "Demo Organization"}
             </p>
           </div>
         </div>
@@ -194,4 +215,4 @@ const EmailIntegration = () => {
   );
 };
 
-export default EmailIntegration; 
+export { EmailIntegration };

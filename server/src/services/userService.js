@@ -335,7 +335,7 @@ class UserService {
       const hasAdminAccess = requester.userOrganizations.some(
         uo => uo.organizationId === organizationId && 
               uo.isActive && 
-              ['OWNER', 'ADMIN'].includes(uo.role)
+              ['OWNER', 'ORG_ADMIN'].includes(uo.role)
       );
 
       if (!hasAdminAccess) {
@@ -411,7 +411,7 @@ class UserService {
       const hasAdminAccess = requester.userOrganizations.some(
         uo => uo.organizationId === organizationId && 
               uo.isActive && 
-              ['OWNER', 'ADMIN'].includes(uo.role)
+              ['OWNER', 'ORG_ADMIN'].includes(uo.role)
       );
 
       if (!hasAdminAccess) {
@@ -457,12 +457,12 @@ class UserService {
     }
 
     // Role hierarchy check
-    const roleHierarchy = ['VIEWER', 'USER', 'MANAGER', 'ADMIN'];
+    const roleHierarchy = ['VIEWER', 'USER', 'ORG_ADMIN'];
     const managerLevel = roleHierarchy.indexOf(manager.role);
     const targetLevel = roleHierarchy.indexOf(target.role);
 
     // Managers can manage users at their level or below
-    return managerLevel >= 2 && managerLevel >= targetLevel; // MANAGER or ADMIN
+    return managerLevel >= 2 && managerLevel >= targetLevel; // ORG_ADMIN
   }
 
   /**
@@ -477,9 +477,9 @@ class UserService {
       return false;
     }
 
-    // Only ADMIN and above can change roles
-    return ['ADMIN'].includes(manager.role) && 
-           ['ADMIN', 'OWNER'].includes(manager.organizationRole);
+    // Only ORG_ADMIN and above can change roles
+    return ['ORG_ADMIN'].includes(manager.role) && 
+           ['ORG_ADMIN', 'OWNER'].includes(manager.organizationRole);
   }
 
   /**
@@ -553,7 +553,7 @@ class UserService {
       }
 
       // Check role hierarchy
-      const roleHierarchy = ['GUEST', 'MEMBER', 'MANAGER', 'ADMIN', 'OWNER'];
+      const roleHierarchy = ['GUEST', 'MEMBER', 'ORG_ADMIN', 'OWNER'];
       const userRoleLevel = roleHierarchy.indexOf(userOrgAccess.role);
       const minimumRoleLevel = roleHierarchy.indexOf(minimumRole);
 

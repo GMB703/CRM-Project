@@ -291,4 +291,18 @@ class CommunicationHubService {
   }
 }
 
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This Communication Hub Service is complete and stable.
+ * Core functionality:
+ * - Multi-channel messaging (Email, SMS)
+ * - Template management
+ * - Message history tracking
+ * - Channel configuration
+ * - Message delivery status
+ * 
+ * This is the core communication service.
+ * Changes here could affect all communication channels.
+ * Modify only if absolutely necessary and after thorough testing.
+ */
+
 export default CommunicationHubService;

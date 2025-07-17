@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, CalendarIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
-import api from '../services/api';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+  CalendarIcon,
+  CurrencyDollarIcon,
+} from "@heroicons/react/24/outline";
+import { api } from "../services/api";
+import toast from "react-hot-toast";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -10,25 +17,45 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    clientId: '',
-    status: 'planning',
-    startDate: '',
-    endDate: '',
-    budget: '',
-    notes: ''
+    name: "",
+    description: "",
+    clientId: "",
+    status: "PLANNING",
+    startDate: "",
+    endDate: "",
+    budget: "",
+    notes: "",
   });
 
   const projectStatuses = [
-    { value: 'planning', label: 'Planning', color: 'bg-gray-100 text-gray-800' },
-    { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800' },
-    { value: 'on-hold', label: 'On Hold', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'completed', label: 'Completed', color: 'bg-blue-100 text-blue-800' },
-    { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' }
+    {
+      value: "PLANNING",
+      label: "Planning",
+      color: "bg-gray-100 text-gray-800",
+    },
+    {
+      value: "IN_PROGRESS",
+      label: "In Progress",
+      color: "bg-green-100 text-green-800",
+    },
+    {
+      value: "ON_HOLD",
+      label: "On Hold",
+      color: "bg-yellow-100 text-yellow-800",
+    },
+    {
+      value: "COMPLETED",
+      label: "Completed",
+      color: "bg-blue-100 text-blue-800",
+    },
+    {
+      value: "CANCELLED",
+      label: "Cancelled",
+      color: "bg-red-100 text-red-800",
+    },
   ];
 
   // Load data on component mount
@@ -40,15 +67,15 @@ const Projects = () => {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/projects');
+      const response = await api.get("/projects");
       if (response.data?.success) {
         setProjects(response.data.data || []);
       } else {
         setProjects(response.data || []);
       }
     } catch (error) {
-      console.error('Error loading projects:', error);
-      toast.error('Failed to load projects');
+      console.error("Error loading projects:", error);
+      toast.error("Failed to load projects");
       setProjects([]);
     } finally {
       setLoading(false);
@@ -57,28 +84,28 @@ const Projects = () => {
 
   const loadCustomers = async () => {
     try {
-      const response = await api.get('/clients');
+      const response = await api.get("/clients");
       if (response.data?.success) {
         setCustomers(response.data.data || []);
       } else {
         setCustomers(response.data || []);
       }
     } catch (error) {
-      console.error('Error loading customers:', error);
+      console.error("Error loading customers:", error);
       setCustomers([]);
     }
   };
 
   const handleAddProject = () => {
     setFormData({
-      name: '',
-      description: '',
-      clientId: '',
-      status: 'planning',
-      startDate: '',
-      endDate: '',
-      budget: '',
-      notes: ''
+      name: "",
+      description: "",
+      clientId: "",
+      status: "PLANNING",
+      startDate: "",
+      endDate: "",
+      budget: "",
+      notes: "",
     });
     setEditingProject(null);
     setShowAddForm(true);
@@ -86,91 +113,100 @@ const Projects = () => {
 
   const handleEditProject = (project) => {
     setFormData({
-      name: project.name || '',
-      description: project.description || '',
-      clientId: project.clientId || '',
-      status: project.status || 'planning',
-      startDate: project.startDate ? project.startDate.split('T')[0] : '',
-      endDate: project.endDate ? project.endDate.split('T')[0] : '',
-      budget: project.budget || '',
-      notes: project.notes || ''
+      name: project.name || "",
+      description: project.description || "",
+      clientId: project.clientId || "",
+      status: project.status || "PLANNING",
+      startDate: project.startDate ? project.startDate.split("T")[0] : "",
+      endDate: project.endDate ? project.endDate.split("T")[0] : "",
+      budget: project.budget || "",
+      notes: project.notes || "",
     });
     setEditingProject(project);
     setShowAddForm(true);
   };
 
   const handleDeleteProject = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) {
+    if (!window.confirm("Are you sure you want to delete this project?")) {
       return;
     }
 
     try {
       await api.delete(`/projects/${projectId}`);
-      toast.success('Project deleted successfully');
+      toast.success("Project deleted successfully");
       loadProjects();
     } catch (error) {
-      console.error('Error deleting project:', error);
-      toast.error('Failed to delete project');
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const submitData = {
         ...formData,
         budget: formData.budget ? parseFloat(formData.budget) : null,
         startDate: formData.startDate || null,
         endDate: formData.endDate || null,
-        clientId: formData.clientId || null
+        clientId: formData.clientId || null,
       };
 
       if (editingProject) {
         await api.put(`/projects/${editingProject.id}`, submitData);
-        toast.success('Project updated successfully');
+        toast.success("Project updated successfully");
       } else {
-        await api.post('/projects', submitData);
-        toast.success('Project created successfully');
+        await api.post("/projects", submitData);
+        toast.success("Project created successfully");
       }
-      
+
       setShowAddForm(false);
       setEditingProject(null);
       loadProjects();
     } catch (error) {
-      console.error('Error saving project:', error);
-      toast.error(`Failed to ${editingProject ? 'update' : 'create'} project`);
+      console.error("Error saving project:", error);
+      toast.error(`Failed to ${editingProject ? "update" : "create"} project`);
     }
   };
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const getStatusBadge = (status) => {
-    const statusObj = projectStatuses.find(s => s.value === status) || projectStatuses[0];
+    const statusObj =
+      projectStatuses.find((s) => s.value === status) || projectStatuses[0];
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusObj.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusObj.color}`}
+      >
         {statusObj.label}
       </span>
     );
   };
 
   const getCustomerName = (clientId) => {
-    const customer = customers.find(c => c.id === clientId);
-    return customer ? `${customer.firstName} ${customer.lastName}` : 'No Customer';
+    const customer = customers.find((c) => c.id === clientId);
+    return customer
+      ? `${customer.firstName} ${customer.lastName}`
+      : "No Customer";
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = searchTerm === '' || 
-      (project.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (project.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      (project.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (project.description?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase(),
+      );
+
+    const matchesStatus =
+      statusFilter === "all" || project.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
@@ -224,8 +260,10 @@ const Projects = () => {
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="all">All Status</option>
-            {projectStatuses.map(status => (
-              <option key={status.value} value={status.value}>{status.label}</option>
+            {projectStatuses.map((status) => (
+              <option key={status.value} value={status.value}>
+                {status.label}
+              </option>
             ))}
           </select>
         </div>
@@ -242,17 +280,31 @@ const Projects = () => {
           ) : filteredProjects.length === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto h-12 w-12 text-gray-400">
-                <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <svg
+                  className="h-12 w-12"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
                 </svg>
               </div>
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                {searchTerm || statusFilter !== 'all' ? 'No projects found' : 'No projects'}
+                {searchTerm || statusFilter !== "all"
+                  ? "No projects found"
+                  : "No projects"}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || statusFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Get started by creating your first project.'}
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting your search or filters."
+                  : "Get started by creating your first project."}
               </p>
-              {!searchTerm && statusFilter === 'all' && (
+              {!searchTerm && statusFilter === "all" && (
                 <div className="mt-6">
                   <button
                     type="button"
@@ -299,7 +351,7 @@ const Projects = () => {
                             {project.name}
                           </div>
                           <div className="text-sm text-gray-500 max-w-xs truncate">
-                            {project.description || 'No description'}
+                            {project.description || "No description"}
                           </div>
                         </div>
                       </td>
@@ -313,24 +365,29 @@ const Projects = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}
-                          {project.endDate && ` - ${new Date(project.endDate).toLocaleDateString()}`}
+                          {project.startDate
+                            ? new Date(project.startDate).toLocaleDateString()
+                            : "-"}
+                          {project.endDate &&
+                            ` - ${new Date(project.endDate).toLocaleDateString()}`}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {project.budget ? `$${Number(project.budget).toLocaleString()}` : '-'}
+                          {project.budget
+                            ? `$${Number(project.budget).toLocaleString()}`
+                            : "-"}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
+                        <button
                           onClick={() => handleEditProject(project)}
                           className="text-indigo-600 hover:text-indigo-900 mr-4 inline-flex items-center"
                         >
                           <PencilIcon className="h-4 w-4 mr-1" />
                           Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteProject(project.id)}
                           className="text-red-600 hover:text-red-900 inline-flex items-center"
                         >
@@ -353,7 +410,7 @@ const Projects = () => {
           <div className="relative top-10 mx-auto p-5 border max-w-lg shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingProject ? 'Edit Project' : 'Create New Project'}
+                {editingProject ? "Edit Project" : "Create New Project"}
               </h3>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
@@ -369,7 +426,7 @@ const Projects = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
@@ -395,7 +452,7 @@ const Projects = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="">Select a customer</option>
-                    {customers.map(customer => (
+                    {customers.map((customer) => (
                       <option key={customer.id} value={customer.id}>
                         {customer.firstName} {customer.lastName}
                       </option>
@@ -413,7 +470,7 @@ const Projects = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    {projectStatuses.map(status => (
+                    {projectStatuses.map((status) => (
                       <option key={status.value} value={status.value}>
                         {status.label}
                       </option>
@@ -490,7 +547,7 @@ const Projects = () => {
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    {editingProject ? 'Update Project' : 'Create Project'}
+                    {editingProject ? "Update Project" : "Create Project"}
                   </button>
                 </div>
               </form>
@@ -502,4 +559,4 @@ const Projects = () => {
   );
 };
 
-export default Projects; 
+export { Projects };

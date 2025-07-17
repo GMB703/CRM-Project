@@ -162,14 +162,22 @@ router.post('/', async (req, res) => {
       data: {
         name,
         description: description || null,
-        clientId: clientId,
         creatorId: creatorId,
         status,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         budget: budget ? parseFloat(budget) : null,
         notes: notes || null,
-        organizationId: organizationId
+        organization: {
+          connect: {
+            id: organizationId
+          }
+        },
+        client: {
+          connect: {
+            id: clientId
+          }
+        }
       },
       include: {
         client: {

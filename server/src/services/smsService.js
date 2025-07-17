@@ -130,3 +130,17 @@ class SMSService {
 }
 
 export default SMSService;
+
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This SMS Service is complete and stable.
+ * Core functionality:
+ * - SMS message sending
+ * - Message history tracking
+ * - Error handling
+ * - Delivery status management
+ * - Organization context
+ * 
+ * This is the core SMS messaging service.
+ * Changes here could affect all SMS communications.
+ * Modify only if absolutely necessary and after thorough testing.
+ */

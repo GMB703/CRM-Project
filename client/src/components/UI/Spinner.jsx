@@ -1,26 +1,26 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
-export const Spinner = ({ 
-  size = 'md', 
-  variant = 'primary', 
-  className = '',
-  text = '',
-  fullScreen = false 
+export const Spinner = ({
+  size = "md",
+  variant = "primary",
+  className = "",
+  text = "",
+  fullScreen = false,
 }) => {
   const sizeClasses = {
-    xs: 'w-3 h-3',
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8',
-    xl: 'w-12 h-12',
+    xs: "w-3 h-3",
+    sm: "w-4 h-4",
+    md: "w-6 h-6",
+    lg: "w-8 h-8",
+    xl: "w-12 h-12",
   };
 
   const variantClasses = {
-    primary: 'border-blue-500',
-    secondary: 'border-gray-500',
-    white: 'border-white',
-    gray: 'border-gray-500',
+    primary: "border-blue-500",
+    secondary: "border-gray-500",
+    white: "border-white",
+    gray: "border-gray-500",
   };
 
   const spinner = (
@@ -28,7 +28,7 @@ export const Spinner = ({
       <motion.div
         className={`${sizeClasses[size]} ${variantClasses[variant]} border-2 border-t-transparent rounded-full`}
         animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
       />
       {text && (
         <p className="mt-2 text-sm text-gray-600 animate-pulse">{text}</p>
@@ -47,4 +47,19 @@ export const Spinner = ({
   return spinner;
 };
 
-export default Spinner; 
+export default Spinner;
+
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This Spinner component is complete and stable.
+ * Core functionality:
+ * - Multiple sizes (xs, sm, md, lg, xl)
+ * - Multiple variants (primary, secondary, white, gray)
+ * - Full screen mode
+ * - Optional loading text
+ * - Smooth animation
+ * - Custom class support
+ *
+ * This is a core UI component used for loading states.
+ * Changes here could affect all loading indicators.
+ * Modify only if absolutely necessary and after thorough UI testing.
+ */

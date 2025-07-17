@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   CurrencyDollarIcon,
   UserGroupIcon,
@@ -8,8 +8,8 @@ import {
   ClipboardDocumentListIcon,
   DocumentTextIcon,
   ArrowUpIcon,
-  ArrowDownIcon
-} from '@heroicons/react/24/outline';
+  ArrowDownIcon,
+} from "@heroicons/react/24/outline";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,10 +20,10 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement
-} from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import dashboardAPI from '../../services/dashboardAPI';
+  ArcElement,
+} from "chart.js";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { getMetrics } from "../../services/dashboardAPI";
 
 // Register ChartJS components
 ChartJS.register(
@@ -35,7 +35,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement
+  ArcElement,
 );
 
 const DashboardMetrics = () => {
@@ -45,42 +45,42 @@ const DashboardMetrics = () => {
       totalProjects: 0,
       totalEstimates: 0,
       totalInvoices: 0,
-      totalTasks: 0
+      totalTasks: 0,
     },
     projects: {
       byStatus: [],
       byStage: [],
       revenue: {
         totalBudget: 0,
-        totalCost: 0
-      }
+        totalCost: 0,
+      },
     },
     tasks: {
       byStatus: [],
       byPriority: [],
       efficiency: {
         avgEstimatedHours: 0,
-        avgActualHours: 0
-      }
+        avgActualHours: 0,
+      },
     },
     financial: {
       invoices: {
         totalAmount: 0,
         amountPaid: 0,
-        outstanding: 0
+        outstanding: 0,
       },
       paymentsByMethod: [],
-      estimateConversion: []
+      estimateConversion: [],
     },
     clients: {
       byStatus: [],
       bySource: [],
-      communications: []
+      communications: [],
     },
     trends: {
       projects: [],
-      revenue: []
-    }
+      revenue: [],
+    },
   });
   const [timeframe, setTimeframe] = useState(6);
   const [loading, setLoading] = useState(true);
@@ -99,15 +99,15 @@ const DashboardMetrics = () => {
         financialMetrics,
         clientMetrics,
         projectTrends,
-        revenueTrends
+        revenueTrends,
       ] = await Promise.all([
-        dashboardAPI.getMetrics(),
+        getMetrics(),
         dashboardAPI.getProjectMetrics(),
         dashboardAPI.getTaskMetrics(),
         dashboardAPI.getFinancialMetrics(),
         dashboardAPI.getClientMetrics(),
-        dashboardAPI.getTrendData('projects', timeframe),
-        dashboardAPI.getTrendData('revenue', timeframe)
+        dashboardAPI.getTrendData("projects", timeframe),
+        dashboardAPI.getTrendData("revenue", timeframe),
       ]);
 
       setMetrics({
@@ -118,25 +118,30 @@ const DashboardMetrics = () => {
         clients: clientMetrics.data,
         trends: {
           projects: projectTrends.data,
-          revenue: revenueTrends.data
-        }
+          revenue: revenueTrends.data,
+        },
       });
     } catch (error) {
-      console.error('Error fetching dashboard metrics:', error);
+      console.error("Error fetching dashboard metrics:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, subtitle }) => (
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    trend,
+    trendValue,
+    subtitle,
+  }) => (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500">{title}</p>
           <p className="text-2xl font-semibold mt-2">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-gray-400 mt-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-sm text-gray-400 mt-1">{subtitle}</p>}
           {trend && (
             <div className="flex items-center mt-2">
               {trendValue > 0 ? (
@@ -144,7 +149,9 @@ const DashboardMetrics = () => {
               ) : (
                 <ArrowDownIcon className="w-4 h-4 text-red-500" />
               )}
-              <span className={`text-sm ${trendValue > 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <span
+                className={`text-sm ${trendValue > 0 ? "text-green-500" : "text-red-500"}`}
+              >
                 {Math.abs(trendValue)}%
               </span>
             </div>
@@ -158,71 +165,71 @@ const DashboardMetrics = () => {
   );
 
   const projectsChartData = {
-    labels: metrics.trends.projects.map(d => d.date),
+    labels: metrics.trends.projects.map((d) => d.date),
     datasets: [
       {
-        label: 'New Projects',
-        data: metrics.trends.projects.map(d => d._count),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-      }
-    ]
+        label: "New Projects",
+        data: metrics.trends.projects.map((d) => d._count),
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.5)",
+      },
+    ],
   };
 
   const revenueChartData = {
-    labels: metrics.trends.revenue.map(d => d.date),
+    labels: metrics.trends.revenue.map((d) => d.date),
     datasets: [
       {
-        label: 'Revenue',
-        data: metrics.trends.revenue.map(d => d._sum.totalAmount),
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.5)',
-      }
-    ]
+        label: "Revenue",
+        data: metrics.trends.revenue.map((d) => d._sum.totalAmount),
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.5)",
+      },
+    ],
   };
 
   const projectStatusChartData = {
-    labels: metrics.projects.byStatus.map(d => d.status),
+    labels: metrics.projects.byStatus.map((d) => d.status),
     datasets: [
       {
-        data: metrics.projects.byStatus.map(d => d._count),
+        data: metrics.projects.byStatus.map((d) => d._count),
         backgroundColor: [
-          'rgba(59, 130, 246, 0.5)',
-          'rgba(34, 197, 94, 0.5)',
-          'rgba(245, 158, 11, 0.5)',
-          'rgba(239, 68, 68, 0.5)',
-          'rgba(139, 92, 246, 0.5)'
+          "rgba(59, 130, 246, 0.5)",
+          "rgba(34, 197, 94, 0.5)",
+          "rgba(245, 158, 11, 0.5)",
+          "rgba(239, 68, 68, 0.5)",
+          "rgba(139, 92, 246, 0.5)",
         ],
         borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(34, 197, 94)',
-          'rgb(245, 158, 11)',
-          'rgb(239, 68, 68)',
-          'rgb(139, 92, 246)'
+          "rgb(59, 130, 246)",
+          "rgb(34, 197, 94)",
+          "rgb(245, 158, 11)",
+          "rgb(239, 68, 68)",
+          "rgb(139, 92, 246)",
         ],
-        borderWidth: 1
-      }
-    ]
+        borderWidth: 1,
+      },
+    ],
   };
 
   const taskPriorityChartData = {
-    labels: metrics.tasks.byPriority.map(d => d.priority),
+    labels: metrics.tasks.byPriority.map((d) => d.priority),
     datasets: [
       {
-        data: metrics.tasks.byPriority.map(d => d._count),
+        data: metrics.tasks.byPriority.map((d) => d._count),
         backgroundColor: [
-          'rgba(239, 68, 68, 0.5)',
-          'rgba(245, 158, 11, 0.5)',
-          'rgba(34, 197, 94, 0.5)'
+          "rgba(239, 68, 68, 0.5)",
+          "rgba(245, 158, 11, 0.5)",
+          "rgba(34, 197, 94, 0.5)",
         ],
         borderColor: [
-          'rgb(239, 68, 68)',
-          'rgb(245, 158, 11)',
-          'rgb(34, 197, 94)'
+          "rgb(239, 68, 68)",
+          "rgb(245, 158, 11)",
+          "rgb(34, 197, 94)",
         ],
-        borderWidth: 1
-      }
-    ]
+        borderWidth: 1,
+      },
+    ],
   };
 
   if (loading) {
@@ -246,13 +253,13 @@ const DashboardMetrics = () => {
           title="Active Projects"
           value={metrics.overview.totalProjects}
           icon={BriefcaseIcon}
-          subtitle={`${metrics.projects.byStatus.find(s => s.status === 'IN_PROGRESS')?._count || 0} in progress`}
+          subtitle={`${metrics.projects.byStatus.find((s) => s.status === "IN_PROGRESS")?._count || 0} in progress`}
         />
         <StatCard
           title="Total Tasks"
           value={metrics.overview.totalTasks}
           icon={ClipboardDocumentListIcon}
-          subtitle={`${metrics.tasks.byStatus.find(s => s.status === 'PENDING')?._count || 0} pending`}
+          subtitle={`${metrics.tasks.byStatus.find((s) => s.status === "PENDING")?._count || 0} pending`}
         />
         <StatCard
           title="Total Revenue"
@@ -279,13 +286,19 @@ const DashboardMetrics = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">Projects by Status</h3>
           <div className="aspect-square">
-            <Doughnut data={projectStatusChartData} options={{ responsive: true }} />
+            <Doughnut
+              data={projectStatusChartData}
+              options={{ responsive: true }}
+            />
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">Tasks by Priority</h3>
           <div className="aspect-square">
-            <Doughnut data={taskPriorityChartData} options={{ responsive: true }} />
+            <Doughnut
+              data={taskPriorityChartData}
+              options={{ responsive: true }}
+            />
           </div>
         </div>
       </div>
@@ -317,8 +330,8 @@ const DashboardMetrics = () => {
             onClick={() => setTimeframe(t)}
             className={`px-4 py-2 rounded-md text-sm ${
               timeframe === t
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {t} Months
@@ -329,4 +342,4 @@ const DashboardMetrics = () => {
   );
 };
 
-export default DashboardMetrics; 
+export { DashboardMetrics };

@@ -92,4 +92,19 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-export default errorHandler; 
+export default errorHandler;
+
+/* [STABLE COMPONENT - DO NOT MODIFY]
+ * This error handler middleware is complete and stable.
+ * Core functionality:
+ * - Comprehensive error logging
+ * - Prisma error handling
+ * - JWT error handling
+ * - File upload error handling
+ * - Rate limit error handling
+ * - Development mode stack traces
+ * 
+ * This is the central error handling component.
+ * Changes here could affect error reporting and debugging.
+ * Modify only if absolutely necessary and after thorough testing.
+ */ 

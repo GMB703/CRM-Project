@@ -1,39 +1,47 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { DocumentTextIcon, TagIcon, PlusIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import {
+  DocumentTextIcon,
+  TagIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 
 const InternalNotes = () => {
   const [notes, setNotes] = useState([
     {
       id: 1,
-      title: 'Project Planning Meeting',
-      content: 'Discussed timeline and resource allocation for the kitchen renovation project. Client wants to expedite the delivery.',
-      tags: ['meeting', 'planning', 'urgent'],
-      author: 'John Smith',
+      title: "Project Planning Meeting",
+      content:
+        "Discussed timeline and resource allocation for the kitchen renovation project. Client wants to expedite the delivery.",
+      tags: ["meeting", "planning", "urgent"],
+      author: "John Smith",
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: 2,
-      title: 'Client Follow-up',
-      content: 'Called client about material selections. They prefer oak cabinets over maple. Need to update estimate.',
-      tags: ['follow-up', 'materials'],
-      author: 'Jane Johnson',
+      title: "Client Follow-up",
+      content:
+        "Called client about material selections. They prefer oak cabinets over maple. Need to update estimate.",
+      tags: ["follow-up", "materials"],
+      author: "Jane Johnson",
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-    }
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
   ]);
   const [newNote, setNewNote] = useState({
-    title: '',
-    content: '',
-    tags: []
+    title: "",
+    content: "",
+    tags: [],
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState("");
 
   const user = useSelector((state) => state.auth?.user);
-  const currentOrganization = useSelector((state) => state.organization?.currentOrganization);
+  const currentOrganization = useSelector(
+    (state) => state.organization?.currentOrganization,
+  );
 
   const handleAddNote = (e) => {
     e.preventDefault();
@@ -44,44 +52,48 @@ const InternalNotes = () => {
       title: newNote.title,
       content: newNote.content,
       tags: newNote.tags,
-      author: user?.name || 'Demo User',
+      author: user?.name || "Demo User",
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
-    setNotes(prev => [noteData, ...prev]);
-    setNewNote({ title: '', content: '', tags: [] });
-    setTagInput('');
+    setNotes((prev) => [noteData, ...prev]);
+    setNewNote({ title: "", content: "", tags: [] });
+    setTagInput("");
     setShowForm(false);
   };
 
   const handleAddTag = (e) => {
     e.preventDefault();
-    if (tagInput.trim() && !newNote.tags.includes(tagInput.trim().toLowerCase())) {
-      setNewNote(prev => ({
+    if (
+      tagInput.trim() &&
+      !newNote.tags.includes(tagInput.trim().toLowerCase())
+    ) {
+      setNewNote((prev) => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim().toLowerCase()]
+        tags: [...prev.tags, tagInput.trim().toLowerCase()],
       }));
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    setNewNote(prev => ({
+    setNewNote((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
 
-  const filteredNotes = notes.filter(note =>
-    filter === '' || 
-    note.title.toLowerCase().includes(filter.toLowerCase()) ||
-    note.content.toLowerCase().includes(filter.toLowerCase()) ||
-    note.tags.some(tag => tag.includes(filter.toLowerCase())) ||
-    note.author.toLowerCase().includes(filter.toLowerCase())
+  const filteredNotes = notes.filter(
+    (note) =>
+      filter === "" ||
+      note.title.toLowerCase().includes(filter.toLowerCase()) ||
+      note.content.toLowerCase().includes(filter.toLowerCase()) ||
+      note.tags.some((tag) => tag.includes(filter.toLowerCase())) ||
+      note.author.toLowerCase().includes(filter.toLowerCase()),
   );
 
-  const allTags = [...new Set(notes.flatMap(note => note.tags))];
+  const allTags = [...new Set(notes.flatMap((note) => note.tags))];
 
   return (
     <div className="space-y-6">
@@ -114,7 +126,7 @@ const InternalNotes = () => {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          {allTags.slice(0, 5).map(tag => (
+          {allTags.slice(0, 5).map((tag) => (
             <button
               key={tag}
               onClick={() => setFilter(tag)}
@@ -130,24 +142,34 @@ const InternalNotes = () => {
       {/* Add Note Form */}
       {showForm && (
         <div className="bg-white border rounded-lg p-6">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Add New Note</h4>
+          <h4 className="text-md font-medium text-gray-900 mb-4">
+            Add New Note
+          </h4>
           <form onSubmit={handleAddNote} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Title</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Title
+              </label>
               <input
                 type="text"
                 value={newNote.title}
-                onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setNewNote((prev) => ({ ...prev, title: e.target.value }))
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 placeholder="Note title..."
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Content</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Content
+              </label>
               <textarea
                 value={newNote.content}
-                onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
+                onChange={(e) =>
+                  setNewNote((prev) => ({ ...prev, content: e.target.value }))
+                }
                 rows={4}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 placeholder="Note content..."
@@ -155,13 +177,15 @@ const InternalNotes = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Tags</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Tags
+              </label>
               <div className="mt-1 flex space-x-2">
                 <input
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTag(e)}
+                  onKeyPress={(e) => e.key === "Enter" && handleAddTag(e)}
                   className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   placeholder="Add tag and press Enter..."
                 />
@@ -175,7 +199,7 @@ const InternalNotes = () => {
               </div>
               {newNote.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {newNote.tags.map(tag => (
+                  {newNote.tags.map((tag) => (
                     <span
                       key={tag}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
@@ -217,24 +241,34 @@ const InternalNotes = () => {
         {filteredNotes.length === 0 ? (
           <div className="text-center py-12">
             <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No notes found</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No notes found
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filter ? 'Try adjusting your search terms.' : 'Create your first internal note to get started.'}
+              {filter
+                ? "Try adjusting your search terms."
+                : "Create your first internal note to get started."}
             </p>
           </div>
         ) : (
           filteredNotes.map((note) => (
-            <div key={note.id} className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow">
+            <div
+              key={note.id}
+              className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow"
+            >
               <div className="flex justify-between items-start mb-3">
-                <h4 className="text-lg font-medium text-gray-900">{note.title}</h4>
+                <h4 className="text-lg font-medium text-gray-900">
+                  {note.title}
+                </h4>
                 <div className="text-xs text-gray-500">
-                  {new Date(note.createdAt).toLocaleDateString()} by {note.author}
+                  {new Date(note.createdAt).toLocaleDateString()} by{" "}
+                  {note.author}
                 </div>
               </div>
               <p className="text-gray-700 mb-3">{note.content}</p>
               {note.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {note.tags.map(tag => (
+                  {note.tags.map((tag) => (
                     <span
                       key={tag}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
@@ -261,7 +295,8 @@ const InternalNotes = () => {
               Notes Summary
             </h3>
             <p className="text-sm text-indigo-700 mt-1">
-              {notes.length} total notes • {allTags.length} unique tags • Organization: {currentOrganization?.name || 'Demo Organization'}
+              {notes.length} total notes • {allTags.length} unique tags •
+              Organization: {currentOrganization?.name || "Demo Organization"}
             </p>
           </div>
         </div>
@@ -270,4 +305,4 @@ const InternalNotes = () => {
   );
 };
 
-export default InternalNotes; 
+export { InternalNotes };

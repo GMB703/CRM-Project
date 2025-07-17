@@ -1,29 +1,34 @@
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { NavLink } from 'react-router-dom';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { 
+import React from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { NavLink } from "react-router-dom";
+import {
+  XMarkIcon,
   HomeIcon,
   UsersIcon,
   BuildingOfficeIcon,
   ChatBubbleLeftRightIcon,
   DocumentTextIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline';
-import { setMobileSidebarOpen } from '../../store/slices/uiSlice';
+  Cog6ToothIcon,
+} from "@heroicons/react/24/outline";
+import { setMobileSidebarOpen } from "../../store/slices/uiSlice";
+import { useOrganization } from "../../contexts/OrganizationContext.jsx";
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Customers', href: '/customers', icon: UsersIcon },
-  { name: 'Organizations', href: '/organizations', icon: BuildingOfficeIcon },
-  { name: 'Communication', href: '/communication', icon: ChatBubbleLeftRightIcon },
-  { name: 'Reports', href: '/reports', icon: DocumentTextIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
+  { name: "Customers", href: "/dashboard/customers", icon: UsersIcon },
+  { name: "Organizations", href: "/organizations", icon: BuildingOfficeIcon },
+  {
+    name: "Communication",
+    href: "/dashboard/communication",
+    icon: ChatBubbleLeftRightIcon,
+  },
+  { name: "Reports", href: "/dashboard/reports", icon: DocumentTextIcon },
+  { name: "Settings", href: "/dashboard/settings", icon: Cog6ToothIcon },
 ];
 
 const MobileSidebar = () => {
   const dispatch = useDispatch();
-  const { currentOrganization } = useSelector((state) => state.organization || {});
+  const { currentOrganization } = useOrganization();
 
   const closeSidebar = () => {
     dispatch(setMobileSidebarOpen(false));
@@ -74,8 +79,8 @@ const MobileSidebar = () => {
                     className={({ isActive }) =>
                       `group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold ${
                         isActive
-                          ? 'bg-indigo-50 text-indigo-600'
-                          : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50'
+                          ? "bg-indigo-50 text-indigo-600"
+                          : "text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
                       }`
                     }
                   >
@@ -95,4 +100,4 @@ const MobileSidebar = () => {
   );
 };
 
-export default MobileSidebar; 
+export { MobileSidebar };

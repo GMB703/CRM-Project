@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useSelector } from 'react-redux';
-import socketService from '../services/socket';
-import { useOrganization } from '../contexts/OrganizationContext';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useSelector } from "react-redux";
+import socketService from "../services/socket";
+import { useOrganization } from "../contexts/OrganizationContext";
 
 /**
  * Custom hook for managing Socket.IO connection with organization context
@@ -12,43 +12,43 @@ import { useOrganization } from '../contexts/OrganizationContext';
  */
 export const useSocket = (options = {}) => {
   const { autoConnect = true, events = [] } = options;
-  
+
   // Get authentication token from Redux store
-  const token = useSelector(state => state.auth?.token);
-  
+  const token = useSelector((state) => state.auth?.token);
+
   // Get current organization context
   const { currentOrganization } = useOrganization();
-  
+
   // Socket connection state
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const [socketId, setSocketId] = useState(null);
-  
+
   // Event listeners storage
   const eventListeners = useRef(new Map());
-  
+
   // Connect to socket with current credentials
   const connect = useCallback(() => {
     if (!token || !currentOrganization?.id) {
-      console.warn('⚠️ Cannot connect socket: Missing token or organization');
+      console.warn("⚠️ Cannot connect socket: Missing token or organization");
       return false;
     }
-    
+
     setIsConnecting(true);
     setConnectionError(null);
-    
+
     try {
       socketService.connect(token, currentOrganization.id);
       return true;
     } catch (error) {
-      console.error('Socket connection error:', error);
+      console.error("Socket connection error:", error);
       setConnectionError(error.message);
       setIsConnecting(false);
       return false;
     }
   }, [token, currentOrganization?.id]);
-  
+
   // Disconnect from socket
   const disconnect = useCallback(() => {
     socketService.disconnect();
@@ -57,53 +57,56 @@ export const useSocket = (options = {}) => {
     setSocketId(null);
     setConnectionError(null);
   }, []);
-  
+
   // Send organization message
   const sendOrgMessage = useCallback((message, metadata = {}) => {
     return socketService.sendOrgMessage(message, metadata);
   }, []);
-  
+
   // Send private message
-  const sendPrivateMessage = useCallback((recipientId, message, metadata = {}) => {
-    return socketService.sendPrivateMessage(recipientId, message, metadata);
-  }, []);
-  
+  const sendPrivateMessage = useCallback(
+    (recipientId, message, metadata = {}) => {
+      return socketService.sendPrivateMessage(recipientId, message, metadata);
+    },
+    [],
+  );
+
   // Send organization update
   const sendOrgUpdate = useCallback((updateData) => {
     return socketService.sendOrgUpdate(updateData);
   }, []);
-  
+
   // Join room
   const joinRoom = useCallback((roomId) => {
     return socketService.joinRoom(roomId);
   }, []);
-  
+
   // Leave room
   const leaveRoom = useCallback((roomId) => {
     return socketService.leaveRoom(roomId);
   }, []);
-  
+
   // Add event listener
   const addEventListener = useCallback((event, callback) => {
     socketService.on(event, callback);
-    
+
     // Store reference for cleanup
     if (!eventListeners.current.has(event)) {
       eventListeners.current.set(event, new Set());
     }
     eventListeners.current.get(event).add(callback);
   }, []);
-  
+
   // Remove event listener
   const removeEventListener = useCallback((event, callback) => {
     socketService.off(event, callback);
-    
+
     // Remove from reference storage
     if (eventListeners.current.has(event)) {
       eventListeners.current.get(event).delete(callback);
     }
   }, []);
-  
+
   // Setup core event listeners
   useEffect(() => {
     const handleConnected = (data) => {
@@ -113,32 +116,32 @@ export const useSocket = (options = {}) => {
       const status = socketService.getStatus();
       setSocketId(status.socketId);
     };
-    
+
     const handleDisconnected = (data) => {
       setIsConnected(false);
       setIsConnecting(false);
       setSocketId(null);
     };
-    
+
     const handleError = (data) => {
       setConnectionError(data.error);
       setIsConnecting(false);
       setIsConnected(false);
     };
-    
+
     // Add core event listeners
-    socketService.on('socket:connected', handleConnected);
-    socketService.on('socket:disconnected', handleDisconnected);
-    socketService.on('socket:error', handleError);
-    
+    socketService.on("socket:connected", handleConnected);
+    socketService.on("socket:disconnected", handleDisconnected);
+    socketService.on("socket:error", handleError);
+
     return () => {
       // Cleanup core event listeners
-      socketService.off('socket:connected', handleConnected);
-      socketService.off('socket:disconnected', handleDisconnected);
-      socketService.off('socket:error', handleError);
+      socketService.off("socket:connected", handleConnected);
+      socketService.off("socket:disconnected", handleDisconnected);
+      socketService.off("socket:error", handleError);
     };
   }, []);
-  
+
   // Setup custom event listeners
   useEffect(() => {
     events.forEach(({ event, callback }) => {
@@ -146,7 +149,7 @@ export const useSocket = (options = {}) => {
         addEventListener(event, callback);
       }
     });
-    
+
     return () => {
       events.forEach(({ event, callback }) => {
         if (event && callback) {
@@ -155,18 +158,35 @@ export const useSocket = (options = {}) => {
       });
     };
   }, [events, addEventListener, removeEventListener]);
-  
+
   // Auto-connect when credentials are available
   useEffect(() => {
-    if (autoConnect && token && currentOrganization?.id && !isConnected && !isConnecting) {
+    if (
+      autoConnect &&
+      token &&
+      currentOrganization?.id &&
+      !isConnected &&
+      !isConnecting
+    ) {
       connect();
     }
-  }, [autoConnect, token, currentOrganization?.id, isConnected, isConnecting, connect]);
-  
+  }, [
+    autoConnect,
+    token,
+    currentOrganization?.id,
+    isConnected,
+    isConnecting,
+    connect,
+  ]);
+
   // Disconnect when organization changes or token is removed
   useEffect(() => {
     const currentOrgId = socketService.getStatus().organizationId;
-    if (currentOrgId && currentOrganization?.id && currentOrgId !== currentOrganization.id) {
+    if (
+      currentOrgId &&
+      currentOrganization?.id &&
+      currentOrgId !== currentOrganization.id
+    ) {
       // Organization changed, reconnect
       disconnect();
       if (autoConnect && token) {
@@ -177,20 +197,20 @@ export const useSocket = (options = {}) => {
       disconnect();
     }
   }, [token, currentOrganization?.id, autoConnect, connect, disconnect]);
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       // Remove all event listeners added by this hook
       eventListeners.current.forEach((callbacks, event) => {
-        callbacks.forEach(callback => {
+        callbacks.forEach((callback) => {
           socketService.off(event, callback);
         });
       });
       eventListeners.current.clear();
     };
   }, []);
-  
+
   return {
     // Connection state
     isConnected,
@@ -198,26 +218,26 @@ export const useSocket = (options = {}) => {
     connectionError,
     socketId,
     organizationId: currentOrganization?.id,
-    
+
     // Connection methods
     connect,
     disconnect,
-    
+
     // Messaging methods
     sendOrgMessage,
     sendPrivateMessage,
     sendOrgUpdate,
-    
+
     // Room methods
     joinRoom,
     leaveRoom,
-    
+
     // Event methods
     addEventListener,
     removeEventListener,
-    
+
     // Socket service reference
-    socket: socketService
+    socket: socketService,
   };
 };
 
@@ -228,14 +248,16 @@ export const useSocket = (options = {}) => {
  * @param {Array} deps - Dependency array for useCallback
  */
 export const useSocketEvent = (event, callback, deps = []) => {
-  const { addEventListener, removeEventListener } = useSocket({ autoConnect: false });
-  
+  const { addEventListener, removeEventListener } = useSocket({
+    autoConnect: false,
+  });
+
   const memoizedCallback = useCallback(callback, deps);
-  
+
   useEffect(() => {
     if (event && memoizedCallback) {
       addEventListener(event, memoizedCallback);
-      
+
       return () => {
         removeEventListener(event, memoizedCallback);
       };
@@ -249,7 +271,7 @@ export const useSocketEvent = (event, callback, deps = []) => {
  * @param {Array} deps - Dependency array
  */
 export const useOrgMessages = (onMessage, deps = []) => {
-  useSocketEvent('org:message', onMessage, deps);
+  useSocketEvent("org:message", onMessage, deps);
 };
 
 /**
@@ -258,7 +280,7 @@ export const useOrgMessages = (onMessage, deps = []) => {
  * @param {Array} deps - Dependency array
  */
 export const usePrivateMessages = (onMessage, deps = []) => {
-  useSocketEvent('private:message', onMessage, deps);
+  useSocketEvent("private:message", onMessage, deps);
 };
 
 /**
@@ -267,7 +289,5 @@ export const usePrivateMessages = (onMessage, deps = []) => {
  * @param {Array} deps - Dependency array
  */
 export const useOrgUpdates = (onUpdate, deps = []) => {
-  useSocketEvent('org:update', onUpdate, deps);
+  useSocketEvent("org:update", onUpdate, deps);
 };
-
-export default useSocket; 
