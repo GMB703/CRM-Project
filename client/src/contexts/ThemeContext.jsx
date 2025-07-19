@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
+import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 
 const ThemeContext = createContext();
 
@@ -104,10 +111,12 @@ export const ThemeProvider = ({ children }) => {
     const pHsl = hexToHsl(theme.primaryColor);
     root.style.setProperty("--primary-600", adjustLightness(pHsl, -5));
     root.style.setProperty("--primary-700", adjustLightness(pHsl, -10));
+    root.style.setProperty("--primary-800", adjustLightness(pHsl, -20));
 
     const sHsl = hexToHsl(theme.secondaryColor);
     root.style.setProperty("--secondary-600", adjustLightness(sHsl, -5));
     root.style.setProperty("--secondary-700", adjustLightness(sHsl, -10));
+    root.style.setProperty("--secondary-800", adjustLightness(sHsl, -20));
     const aHsl = hexToHsl(theme.accentColor);
     root.style.setProperty("--accent-600", adjustLightness(aHsl, -5));
     root.style.setProperty("--accent-700", adjustLightness(aHsl, -10));
@@ -151,9 +160,35 @@ export const ThemeProvider = ({ children }) => {
     isDarkMode: theme.darkMode,
   };
 
+  // Generate an MUI theme that matches the current palette so that
+  // <Button color="primary"/> etc reflect the Theme Settings.
+  const muiTheme = useMemo(() => {
+    return createTheme({
+      palette: {
+        mode: theme.darkMode ? "dark" : "light",
+        primary: {
+          main: theme.primaryColor,
+          dark: theme.primaryColor, // simplified – could derive darker shade
+          light: theme.primaryColor,
+          contrastText: "#ffffff",
+        },
+        secondary: {
+          main: theme.secondaryColor,
+          contrastText: "#ffffff",
+        },
+        error: {
+          main: "#e53935",
+        },
+        success: {
+          main: "#43a047",
+        },
+      },
+    });
+  }, [theme.primaryColor, theme.secondaryColor, theme.darkMode]);
+
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <MuiThemeProvider theme={muiTheme}>
+      <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    </MuiThemeProvider>
   );
 };

@@ -279,6 +279,10 @@ const Sidebar = ({ isOpen, onToggle }) => {
                             justifyContent: sidebarCollapsed
                               ? "center"
                               : "initial",
+                            "&.Mui-selected, &.Mui-selected:hover": {
+                              backgroundColor: "hsl(var(--primary-700))",
+                              color: "#fff",
+                            },
                           }}
                         >
                           <ListItemIcon

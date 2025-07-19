@@ -47,7 +47,7 @@ const SuperAdminSidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-gray-900 text-white flex flex-col">
+    <div className="w-64 bg-gray-900 text-white flex flex-col" style={{ backgroundColor: "hsl(var(--primary-800))" }}>
       {/* Logo */}
       <div className="p-6">
         <h1 className="text-2xl font-bold">CRM Admin</h1>
