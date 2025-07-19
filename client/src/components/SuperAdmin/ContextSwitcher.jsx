@@ -144,7 +144,7 @@ const ContextSwitcher = () => {
             <option value="">Choose an organization...</option>
             {organizations.map((org) => (
               <option key={org.id} value={org.id}>
-                {org.name} ({org.status})
+                {org.name}
               </option>
             ))}
           </select>

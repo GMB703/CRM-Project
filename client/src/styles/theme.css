@@ -345,3 +345,28 @@
 
   --border: 220 13% 91%;
 } 
+
+/* ---------------- Dynamic Utility Overrides ---------------- */
+/* Map Tailwind blue utilities to theme primary variables so legacy markup adapts */
+.bg-blue-50 { background-color: hsl(var(--primary-50)) !important; }
+.bg-blue-100 { background-color: hsl(var(--primary-100)) !important; }
+.bg-blue-200 { background-color: hsl(var(--primary-200)) !important; }
+.bg-blue-300 { background-color: hsl(var(--primary-300)) !important; }
+.bg-blue-400 { background-color: hsl(var(--primary-400)) !important; }
+.bg-blue-500 { background-color: hsl(var(--primary-500)) !important; }
+.bg-blue-600 { background-color: hsl(var(--primary-600)) !important; }
+.bg-blue-700 { background-color: hsl(var(--primary-700)) !important; }
+.bg-blue-800 { background-color: hsl(var(--primary-800)) !important; }
+.bg-blue-900 { background-color: hsl(var(--primary-900)) !important; }
+
+.text-blue-600 { color: hsl(var(--primary-600)) !important; }
+.text-blue-700 { color: hsl(var(--primary-700)) !important; }
+.text-blue-800 { color: hsl(var(--primary-800)) !important; }
+.text-blue-900 { color: hsl(var(--primary-900)) !important; }
+
+.border-blue-500 { border-color: hsl(var(--primary-500)) !important; }
+
+.focus\:ring-blue-500:focus { --tw-ring-color: hsl(var(--primary-500)) !important; }
+
+.hover\:bg-blue-700:hover { background-color: hsl(var(--primary-700)) !important; }
+/* ------------------------------------------------------------ */ 

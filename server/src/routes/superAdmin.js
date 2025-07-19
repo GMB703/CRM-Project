@@ -154,7 +154,11 @@ router.get('/organizations', async (req, res) => {
       select: {
         id: true,
         name: true,
-      }
+        code: true,
+        createdAt: true,
+        users: { select: { id: true } },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     res.json({ success: true, data: organizations });
