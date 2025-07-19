@@ -17,18 +17,18 @@ import {
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { OrganizationProvider } from "./contexts/OrganizationContext.jsx";
-import { Layout } from "./components/Layout/Layout.jsx";
-import { PrivateRoute } from "./components/PrivateRoute.jsx";
+import { Layout } from "./components/Layout.jsx";
+import PrivateRoute from "./components/PrivateRoute.jsx";
 import { Login } from "./pages/Auth/Login.jsx";
 import { ForgotPassword } from "./pages/Auth/ForgotPassword.jsx";
 import { ResetPassword } from "./pages/Auth/ResetPassword.jsx";
 import { Dashboard } from "./pages/Dashboard/Dashboard.jsx";
-import { Leads } from "./pages/Leads.jsx";
+import { LeadsPage } from "./pages/Leads.jsx";
 import { Projects } from "./pages/Projects.jsx";
 import { Tasks } from "./pages/Tasks.jsx";
 import { Estimates } from "./pages/Estimates.jsx";
 import { Settings } from "./pages/Settings.jsx";
-import { CommunicationHub } from "./pages/Communication/CommunicationHub.jsx";
+import CommunicationHubPage from "./pages/Communication/CommunicationHub.jsx";
 import { AdminDashboard } from "./components/Admin/AdminDashboard.jsx";
 import { SuperAdminLayout } from "./components/SuperAdmin/SuperAdminLayout.jsx";
 import { SuperAdminDashboard } from "./components/SuperAdmin/SuperAdminDashboard.jsx";
@@ -38,6 +38,12 @@ import { AnalyticsDashboard } from "./components/SuperAdmin/Analytics/AnalyticsD
 import { AuditLogViewer } from "./components/SuperAdmin/AuditLogViewer.jsx";
 import { Customers } from "./pages/Customers.jsx";
 import { RolesAndPermissionsPage } from "./components/SuperAdmin/RolesAndPermissionsPage.jsx";
+import { SuperAdminProfile } from "./components/SuperAdmin/SuperAdminProfile.jsx";
+import ReportBuilder from './pages/ReportBuilder';
+import PaymentPage from './pages/PaymentPage';
+import PaymentDashboard from './pages/PaymentDashboard';
+import ContractTemplates from './pages/ContractTemplates';
+import ClientPortalDashboard from './pages/ClientPortalDashboard';
 
 // AuthGate component to protect routes
 function AuthGate({ children }) {
@@ -103,8 +109,8 @@ function App() {
             />
             <Route path="analytics" element={<AnalyticsDashboard />} />
             <Route path="security" element={<AuditLogViewer />} />
-            <Route path="settings" element={<div>System Settings</div>} />
-            <Route path="profile" element={<div>Admin Profile</div>} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="profile" element={<SuperAdminProfile />} />
           </Route>
 
           {/* Regular User Routes */}
@@ -117,18 +123,22 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="leads/*" element={<Leads />} />
+            <Route path="leads/*" element={<LeadsPage />} />
             <Route path="projects" element={<Projects />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="estimates/*" element={<Estimates />} />
-            <Route path="communication/*" element={<CommunicationHub />} />
+            <Route path="communication/*" element={<CommunicationHubPage />} />
             <Route path="settings" element={<Settings />} />
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="customers" element={<Customers />} />
-            <Route
-              path="reports"
-              element={<div>Reports page coming soon...</div>}
-            />
+            {/* Relative child routes (no leading '/') */}
+            <Route path="communications/*" element={<CommunicationHubPage />} />
+            <Route path="analytics" element={<AnalyticsDashboard />} />
+            <Route path="reports" element={<ReportBuilder />} />
+            <Route path="payments" element={<PaymentPage />} />
+            <Route path="payment-dashboard" element={<PaymentDashboard />} />
+            <Route path="contract-templates" element={<ContractTemplates />} />
+            <Route path="client-portal" element={<ClientPortalDashboard />} />
           </Route>
 
           {/* Catch all route - redirect to appropriate dashboard */}

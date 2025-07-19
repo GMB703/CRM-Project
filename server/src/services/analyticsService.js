@@ -81,4 +81,42 @@ export const getOrganizationMetrics = async (organizationId) => {
     console.error('Error getting organization metrics:', error);
     throw error;
   }
+};
+
+export const getLeadAnalytics = async (organizationId) => {
+  const leads = await prisma.lead.findMany({
+    where: { organizationId },
+  });
+
+  const newLeads = leads.filter((lead) => lead.status === 'NEW').length;
+  const wonLeads = leads.filter((lead) => lead.status === 'WON').length;
+  const conversionRate = leads.length > 0 ? (wonLeads / leads.length) * 100 : 0;
+
+  return {
+    totalLeads: leads.length,
+    newLeads,
+    wonLeads,
+    conversionRate,
+  };
+};
+
+export const getRevenueAnalytics = async (organizationId) => {
+  const wonLeads = await prisma.lead.findMany({
+    where: {
+      organizationId,
+      status: 'WON',
+    },
+  });
+
+  const totalRevenue = wonLeads.reduce(
+    (acc, lead) => acc + lead.estimatedValue,
+    0,
+  );
+  const averageDealSize =
+    wonLeads.length > 0 ? totalRevenue / wonLeads.length : 0;
+
+  return {
+    totalRevenue,
+    averageDealSize,
+  };
 }; 

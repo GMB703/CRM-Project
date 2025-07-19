@@ -5,7 +5,7 @@ import {
   selectIsAuthenticated,
 } from "../../store/slices/authSlice";
 import { useOrganization } from "../../contexts/OrganizationContext.jsx";
-import { LoadingSpinner } from "../UI/LoadingSpinner.jsx";
+import { Spinner } from "../UI/Spinner";
 import {
   Box,
   Grid,
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
         alignItems="center"
         minHeight="50vh"
       >
-        <LoadingSpinner size="lg" />
+        <Spinner size="lg" />
       </Box>
     );
   }

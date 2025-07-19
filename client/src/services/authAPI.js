@@ -100,3 +100,105 @@ export const resetPassword = async (token, password) => {
     );
   }
 };
+
+// Get user notification preferences
+export const getNotificationPreferences = async () => {
+  try {
+    const response = await api.get("/auth/notification-preferences");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update user notification preferences
+export const updateNotificationPreferences = async (preferences) => {
+  try {
+    const response = await api.put("/auth/notification-preferences", preferences);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get organization theme
+export const getOrganizationTheme = async () => {
+  try {
+    const response = await api.get("/auth/organization-theme");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update organization theme
+export const updateOrganizationTheme = async (theme) => {
+  try {
+    const response = await api.put("/auth/organization-theme", theme);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Security-related API functions
+
+// Get user's login history
+export const getLoginHistory = async () => {
+  try {
+    const response = await api.get("/auth/login-history");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get user's active sessions
+export const getActiveSessions = async () => {
+  try {
+    const response = await api.get("/auth/active-sessions");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Logout from all other sessions
+export const logoutAllSessions = async () => {
+  try {
+    const response = await api.post("/auth/logout-all-sessions");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get security settings
+export const getSecuritySettings = async () => {
+  try {
+    const response = await api.get("/auth/security-settings");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update security settings
+export const updateSecuritySettings = async (settings) => {
+  try {
+    const response = await api.put("/auth/security-settings", settings);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get all users (for super admin context switching)
+export const getUsers = async () => {
+  try {
+    const response = await api.get("/super-admin/users");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

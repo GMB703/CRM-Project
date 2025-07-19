@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { LoadingSpinner } from "../../UI/LoadingSpinner.jsx";
+import { Spinner } from "../../UI/Spinner";
 import {
   getAllOrganizationsAdmin,
   deleteOrganizationAdmin,
@@ -129,7 +129,7 @@ const OrganizationsPage = () => {
     }
   };
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) return <Spinner />;
   if (error) {
     return (
       <div className="p-6 text-red-600">

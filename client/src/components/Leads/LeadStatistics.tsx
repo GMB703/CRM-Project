@@ -203,4 +203,4 @@ const LeadStatistics = () => {
   );
 };
 
-export { LeadStatistics }; 
+export default LeadStatistics; 

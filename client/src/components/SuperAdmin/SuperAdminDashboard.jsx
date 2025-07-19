@@ -6,12 +6,19 @@ import {
   selectAuthLoading,
 } from "../../store/slices/authSlice";
 import { Card, Button, Alert } from "@mui/material";
-import { Spinner } from "../UI/Spinner.jsx";
-import { getOrganizations } from "../../services/organizationAPI";
+import { Spinner } from '../UI/Spinner';
+import {
+  getAllOrganizationsAdmin,
+  extractOrganizationsArray,
+} from "../../services/organizationAPI";
+import UserActivitySummary from "./UserActivitySummary.jsx";
+import ContextSwitcher from './ContextSwitcher.jsx';
+import CreateOrganizationForm from './CreateOrganizationForm.jsx';
+import CreateUserForm from './CreateUserForm.jsx';
 
 console.log(
   "SuperAdminDashboard module loaded, organizationAPI:",
-  getOrganizations,
+  getAllOrganizationsAdmin,
 );
 
 const SuperAdminDashboard = () => {
@@ -33,12 +40,12 @@ const SuperAdminDashboard = () => {
       try {
         console.log(
           "Attempting to load organizations with API:",
-          getOrganizations,
+          getAllOrganizationsAdmin,
         );
         setLoading(true);
         setError(null);
-        const orgs = await getOrganizations(true); // true for super admin
-        // getOrganizations now always returns an array (see organizationAPI.js)
+        const response = await getAllOrganizationsAdmin();
+        const orgs = extractOrganizationsArray(response);
         setOrganizations(orgs);
       } catch (err) {
         console.error("Failed to load organizations:", err);
@@ -91,6 +98,28 @@ const SuperAdminDashboard = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* User Activity Summary - Only for Super Admins */}
+        <div className="lg:col-span-3">
+          <UserActivitySummary />
+        </div>
+
+        {/* Context Switcher - Only for Super Admins */}
+        <div className="lg:col-span-3">
+          <ContextSwitcher />
+        </div>
+
+        <div className="lg:col-span-3">
+          <CreateOrganizationForm
+            onOrganizationCreated={(newOrg) => {
+              setOrganizations((prevOrgs) => [...prevOrgs, newOrg]);
+            }}
+          />
+        </div>
+
+        <div className="lg:col-span-3">
+          <CreateUserForm />
+        </div>
+
         <Card className="p-4">
           <h2 className="text-xl font-semibold mb-4">Organizations</h2>
           <div className="space-y-4">

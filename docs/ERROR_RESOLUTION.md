@@ -1395,3 +1395,19 @@ GET /api/dashboard/clients/metrics 404
 - See code comments in `client/src/components/SuperAdmin/Users/UsersPage.jsx` for details.
 
 ---
+
+## Issue: Persistent `Spinner` Export Error
+
+**Date:** 2024-07-18
+
+**Error Message:** `[plugin:vite:react-babel] /Users/duke/Desktop/CRM Project/client/src/components/UI/Spinner.jsx: 'Spinner' has already been exported. Exported identifiers must be unique. (7:9)`
+
+**Root Cause:**
+The application had two spinner components, `Spinner.jsx` and `LoadingSpinner.jsx`, in the `client/src/components/UI` directory. An `index.js` file in the same directory was attempting to export both, which caused a conflict. This issue was compounded by inconsistent import paths, with some files using `ui` and others using `UI`.
+
+**Solution:**
+The issue was resolved by taking the following steps:
+1.  Consolidated the two spinner components into a single, well-defined component in `client/src/components/UI/Spinner.jsx`.
+2.  Deleted the redundant `client/src/components/UI/LoadingSpinner.jsx` file.
+3.  Deleted the conflicting `client/src/components/UI/index.js` file.
+4.  Updated all files that were importing the old spinner components to use the new, consolidated one with a consistent import path (`'../UI/Spinner'`).

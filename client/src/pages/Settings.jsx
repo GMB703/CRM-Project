@@ -1,66 +1,216 @@
-import React, { useState } from "react";
-import { useAuth, usePermissions } from "../hooks/useAuth";
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, selectIsSuperAdmin, updateUser } from "../store/slices/authSlice";
+import { updateUser as updateUserAPI } from "../services/userAPI";
+import { updateUser as updateUserRedux } from "../store/slices/authSlice";
+import { getNotificationPreferences, updateNotificationPreferences } from "../services/authAPI";
+import { api } from "../services/api";
+import toast from "react-hot-toast";
+import { ThemeSettings } from "../components/Settings/ThemeSettings.jsx";
+import SecuritySettings from "../components/Settings/SecuritySettings";
+import ApiKeySettings from "../components/Settings/ApiKeySettings";
 
 const Settings = () => {
-  const { user } = useAuth();
-  const { isAdmin, isSuperAdmin } = usePermissions();
+  const user = useSelector(selectCurrentUser);
+  const isSuperAdmin = useSelector(selectIsSuperAdmin);
+  const isManager = user?.role === "ORG_ADMIN" || user?.role === "MANAGER";
+  const isRegular = !isSuperAdmin && !isManager;
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Profile state (placeholder)
-  const [profile, setProfile] = useState({
-    name: "User Name",
-    email: "user@email.com",
-    phone: "",
-  });
-  const [password, setPassword] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  });
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    inApp: true,
-  });
-  const [theme, setTheme] = useState("light");
-
-  // Organization state (admin only, placeholder)
-  const [org, setOrg] = useState({
-    name: "Acme Corp",
-    logo: null,
-    contact: "info@acme.com",
-  });
-
-  // API Keys (admin only, placeholder)
-  const [apiKeys] = useState([
-    { id: 1, key: "sk-1234...", created: "2024-07-01" },
-    { id: 2, key: "sk-5678...", created: "2024-07-02" },
-  ]);
-
-  // Security (placeholder)
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-
-  // Tab definitions
+  // Tab definitions based on role
   const TABS = [
     { key: "profile", label: "Profile" },
     { key: "notifications", label: "Notifications" },
     { key: "theme", label: "Theme" },
     { key: "security", label: "Security" },
   ];
-  if (isAdmin || isSuperAdmin)
-    TABS.push({ key: "organization", label: "Organization" });
-  if (isAdmin || isSuperAdmin) TABS.push({ key: "apiKeys", label: "API Keys" });
+  if (isSuperAdmin) TABS.unshift({ key: "system", label: "System Settings" });
+  if (isManager) TABS.push({ key: "organization", label: "Organization" });
+  if (isSuperAdmin || isManager) TABS.push({ key: "apiKeys", label: "API Keys" });
 
-  // Handlers (placeholder logic)
-  const handleProfileChange = (e) =>
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  const handlePasswordChange = (e) =>
-    setPassword({ ...password, [e.target.name]: e.target.value });
-  const handleNotificationsChange = (e) =>
-    setNotifications({ ...notifications, [e.target.name]: e.target.checked });
-  const handleThemeChange = (e) => setTheme(e.target.value);
-  const handleOrgChange = (e) =>
-    setOrg({ ...org, [e.target.name]: e.target.value });
+  const dispatch = useDispatch();
+  const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Notification preferences state
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    emailNotifications: true,
+    smsNotifications: false,
+    pushNotifications: true,
+    inAppNotifications: true,
+    taskDueNotifications: true,
+    projectUpdateNotifications: true,
+    invoiceDueNotifications: true,
+    estimateAcceptedNotifications: true,
+    estimateRejectedNotifications: true,
+    paymentReceivedNotifications: true,
+    systemAlertNotifications: true,
+    inactivityReminderNotifications: true,
+    dailyDigestEnabled: false,
+    weeklyDigestEnabled: false,
+    digestTime: "09:00",
+    quietHoursEnabled: false,
+    quietHoursStart: "22:00",
+    quietHoursEnd: "08:00",
+  });
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
+
+  // Load notification preferences
+  useEffect(() => {
+    const loadNotificationPreferences = async () => {
+      try {
+        const response = await getNotificationPreferences();
+        if (response.success && response.data) {
+          setNotificationPreferences(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to load notification preferences:", error);
+        toast.error("Failed to load notification preferences");
+      } finally {
+        setPreferencesLoaded(true);
+      }
+    };
+
+    loadNotificationPreferences();
+  }, []);
+
+  const handleProfileChange = (e) => {
+    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+  };
+
+  const handleProfileSave = async () => {
+    setProfileLoading(true);
+    try {
+      const res = await updateUserAPI(user.id, profileForm);
+      dispatch(updateUserRedux(res.data));
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to update profile");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
+  };
+
+  const handlePasswordSave = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const response = await api.put("/auth/updatepassword", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      if (response.data.success) {
+        toast.success("Password updated successfully");
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        toast.error(response.data.message || "Failed to update password");
+      }
+    } catch (error) {
+      console.error("Password update error:", error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          "Failed to update password";
+      toast.error(errorMessage);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleNotificationChange = (field, value) => {
+    setNotificationPreferences(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleNotificationSave = async () => {
+    setNotificationLoading(true);
+    try {
+      const response = await updateNotificationPreferences(notificationPreferences);
+      if (response.success) {
+        toast.success("Notification preferences updated successfully");
+      } else {
+        toast.error(response.message || "Failed to update notification preferences");
+      }
+    } catch (error) {
+      console.error("Notification preferences update error:", error);
+      toast.error("Failed to update notification preferences");
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  const NotificationToggle = ({ label, field, description }) => (
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+      <div className="flex-1">
+        <label className="text-sm font-medium text-gray-900">{label}</label>
+        {description && (
+          <p className="text-xs text-gray-500 mt-1">{description}</p>
+        )}
+      </div>
+      <button
+        type="button"
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          notificationPreferences[field] ? 'bg-blue-600' : 'bg-gray-200'
+        }`}
+        onClick={() => handleNotificationChange(field, !notificationPreferences[field])}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            notificationPreferences[field] ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  );
+
+  const TimeInput = ({ label, field, description }) => (
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      {description && (
+        <p className="text-xs text-gray-500 mb-2">{description}</p>
+      )}
+      <input
+        type="time"
+        value={notificationPreferences[field]}
+        onChange={(e) => handleNotificationChange(field, e.target.value)}
+        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
+  );
 
   return (
     <div className="p-6">
@@ -77,306 +227,243 @@ const Settings = () => {
         ))}
       </div>
 
-      {/* Profile Tab */}
+      {/* Super Admin: System Settings */}
+      {activeTab === "system" && isSuperAdmin && (
+        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
+          <h2 className="text-lg font-medium mb-4">System Settings (Super Admin)</h2>
+          <p className="text-gray-600 mb-4">Manage application-wide settings, feature toggles, and system info here.</p>
+          {/* Add system settings fields here */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">App Version</label>
+            <div className="mt-1 text-gray-800">1.0.0</div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Environment</label>
+            <div className="mt-1 text-gray-800">Production</div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Feature Toggles</label>
+            <div className="mt-1 text-gray-800">(Coming soon)</div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Tab (All Users) */}
       {activeTab === "profile" && (
         <div className="bg-white shadow rounded-lg p-6 max-w-xl">
           <h2 className="text-lg font-medium mb-4">Profile</h2>
-          <form className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={profile.name}
-                onChange={handleProfileChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={profile.email}
-                onChange={handleProfileChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Phone
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={profile.phone}
-                onChange={handleProfileChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="pt-4">
-              <button
-                type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              >
-                Save Profile
-              </button>
-            </div>
-          </form>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">First Name</label>
+            <input type="text" name="firstName" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={profileForm.firstName} onChange={handleProfileChange} />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Last Name</label>
+            <input type="text" name="lastName" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={profileForm.lastName} onChange={handleProfileChange} />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input type="email" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={user?.email} readOnly />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Phone</label>
+            <input type="tel" name="phone" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={profileForm.phone} onChange={handleProfileChange} />
+          </div>
+          <button type="button" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleProfileSave} disabled={profileLoading}>
+            {profileLoading ? "Saving..." : "Save Profile"}
+          </button>
           <hr className="my-6" />
           <h3 className="text-md font-medium mb-2">Change Password</h3>
-          <form className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Current Password
-              </label>
-              <input
-                type="password"
-                name="current"
-                value={password.current}
-                onChange={handlePasswordChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                New Password
-              </label>
-              <input
-                type="password"
-                name="new"
-                value={password.new}
-                onChange={handlePasswordChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                name="confirm"
-                value={password.confirm}
-                onChange={handlePasswordChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div className="pt-4">
-              <button
-                type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              >
-                Change Password
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Notifications Tab */}
-      {activeTab === "notifications" && (
-        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          <h2 className="text-lg font-medium mb-4">Notification Preferences</h2>
-          <form className="space-y-4">
-            <div className="flex items-center">
-              <input
-                id="email"
-                name="email"
-                type="checkbox"
-                checked={notifications.email}
-                onChange={handleNotificationsChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="email"
-                className="ml-2 block text-sm text-gray-700"
-              >
-                Email Notifications
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                id="sms"
-                name="sms"
-                type="checkbox"
-                checked={notifications.sms}
-                onChange={handleNotificationsChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <label htmlFor="sms" className="ml-2 block text-sm text-gray-700">
-                SMS Notifications
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                id="inApp"
-                name="inApp"
-                type="checkbox"
-                checked={notifications.inApp}
-                onChange={handleNotificationsChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="inApp"
-                className="ml-2 block text-sm text-gray-700"
-              >
-                In-App Notifications
-              </label>
-            </div>
-            <div className="pt-4">
-              <button
-                type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              >
-                Save Preferences
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Theme Tab */}
-      {activeTab === "theme" && (
-        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          <h2 className="text-lg font-medium mb-4">Theme & Appearance</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Theme
-              </label>
-              <select
-                value={theme}
-                onChange={handleThemeChange}
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Security Tab */}
-      {activeTab === "security" && (
-        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          <h2 className="text-lg font-medium mb-4">Security</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Two-Factor Authentication (2FA)</span>
-              <button
-                type="button"
-                onClick={() => setMfaEnabled((v) => !v)}
-                className={`px-3 py-1 rounded ${mfaEnabled ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700"}`}
-              >
-                {mfaEnabled ? "Enabled" : "Enable"}
-              </button>
-            </div>
-            <div>
-              <span className="text-sm text-gray-600">
-                Recent Login Activity (placeholder)
-              </span>
-              <ul className="mt-2 text-xs text-gray-500 list-disc list-inside">
-                <li>2024-07-01 10:00 - Chrome, MacOS - Success</li>
-                <li>2024-06-30 22:15 - Mobile, iOS - Success</li>
-              </ul>
-            </div>
-            <div>
-              <span className="text-sm text-gray-600">
-                Active Sessions (placeholder)
-              </span>
-              <ul className="mt-2 text-xs text-gray-500 list-disc list-inside">
-                <li>Current Device - Chrome, MacOS</li>
-                <li>iPhone - Mobile, iOS</li>
-              </ul>
-              <button className="mt-2 text-xs text-red-600 underline">
-                Logout from all other sessions
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Organization Tab (Admin Only) */}
-      {activeTab === "organization" && (isAdmin || isSuperAdmin) && (
-        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          <h2 className="text-lg font-medium mb-4">Organization Settings</h2>
-          <form className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Organization Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={org.name}
-                onChange={handleOrgChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Contact Email
-              </label>
-              <input
-                type="email"
-                name="contact"
-                value={org.contact}
-                onChange={handleOrgChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            {/* Logo upload can be added here */}
-            <div className="pt-4">
-              <button
-                type="button"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-              >
-                Save Organization
-              </button>
-            </div>
-          </form>
-          <hr className="my-6" />
-          <div>
-            <span className="text-sm text-gray-600">Manage Users</span>
-            <button className="ml-2 text-xs text-blue-600 underline">
-              Go to User Management
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* API Keys Tab (Admin Only) */}
-      {activeTab === "apiKeys" && (isAdmin || isSuperAdmin) && (
-        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          <h2 className="text-lg font-medium mb-4">API Keys</h2>
           <div className="mb-4">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-              Generate New API Key
-            </button>
+            <label className="block text-sm font-medium text-gray-700">Current Password</label>
+            <input type="password" name="currentPassword" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={passwordForm.currentPassword} onChange={handlePasswordChange} />
           </div>
-          <ul className="divide-y divide-gray-200">
-            {apiKeys.map((key) => (
-              <li
-                key={key.id}
-                className="py-2 flex items-center justify-between"
-              >
-                <span className="font-mono text-xs">{key.key}</span>
-                <span className="text-xs text-gray-500">
-                  Created: {key.created}
-                </span>
-                <button className="ml-2 text-xs text-red-600 underline">
-                  Revoke
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">New Password</label>
+            <input type="password" name="newPassword" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={passwordForm.newPassword} onChange={handlePasswordChange} />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+            <input type="password" name="confirmPassword" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value={passwordForm.confirmPassword} onChange={handlePasswordChange} />
+          </div>
+          <button type="button" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handlePasswordSave} disabled={passwordLoading}>
+            {passwordLoading ? "Saving..." : "Change Password"}
+          </button>
         </div>
+      )}
+
+      {/* Notifications Tab (All Users) */}
+      {activeTab === "notifications" && (
+        <div className="bg-white shadow rounded-lg p-6 max-w-2xl">
+          <h2 className="text-lg font-medium mb-6">Notification Preferences</h2>
+          
+          {!preferencesLoaded ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-500 mt-2">Loading preferences...</p>
+            </div>
+          ) : (
+            <>
+              {/* Channel Preferences */}
+              <div className="mb-8">
+                <h3 className="text-md font-medium mb-4 text-gray-900">Notification Channels</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <NotificationToggle
+                    label="Email Notifications"
+                    field="emailNotifications"
+                    description="Receive notifications via email"
+                  />
+                  <NotificationToggle
+                    label="SMS Notifications"
+                    field="smsNotifications"
+                    description="Receive notifications via text message"
+                  />
+                  <NotificationToggle
+                    label="Push Notifications"
+                    field="pushNotifications"
+                    description="Receive browser push notifications"
+                  />
+                  <NotificationToggle
+                    label="In-App Notifications"
+                    field="inAppNotifications"
+                    description="Show notifications within the application"
+                  />
+                </div>
+              </div>
+
+              {/* Notification Types */}
+              <div className="mb-8">
+                <h3 className="text-md font-medium mb-4 text-gray-900">Notification Types</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <NotificationToggle
+                    label="Task Due Reminders"
+                    field="taskDueNotifications"
+                    description="Get notified when tasks are due"
+                  />
+                  <NotificationToggle
+                    label="Project Updates"
+                    field="projectUpdateNotifications"
+                    description="Receive updates about project status changes"
+                  />
+                  <NotificationToggle
+                    label="Invoice Due Reminders"
+                    field="invoiceDueNotifications"
+                    description="Get notified when invoices are due"
+                  />
+                  <NotificationToggle
+                    label="Estimate Accepted"
+                    field="estimateAcceptedNotifications"
+                    description="Get notified when estimates are accepted"
+                  />
+                  <NotificationToggle
+                    label="Estimate Rejected"
+                    field="estimateRejectedNotifications"
+                    description="Get notified when estimates are rejected"
+                  />
+                  <NotificationToggle
+                    label="Payment Received"
+                    field="paymentReceivedNotifications"
+                    description="Get notified when payments are received"
+                  />
+                  <NotificationToggle
+                    label="System Alerts"
+                    field="systemAlertNotifications"
+                    description="Receive important system notifications"
+                  />
+                  <NotificationToggle
+                    label="Inactivity Reminders"
+                    field="inactivityReminderNotifications"
+                    description="Get reminded about inactive leads"
+                  />
+                </div>
+              </div>
+
+              {/* Digest Settings */}
+              <div className="mb-8">
+                <h3 className="text-md font-medium mb-4 text-gray-900">Digest Settings</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <NotificationToggle
+                    label="Daily Digest"
+                    field="dailyDigestEnabled"
+                    description="Receive a daily summary of all notifications"
+                  />
+                  <NotificationToggle
+                    label="Weekly Digest"
+                    field="weeklyDigestEnabled"
+                    description="Receive a weekly summary of all notifications"
+                  />
+                  {notificationPreferences.dailyDigestEnabled && (
+                    <TimeInput
+                      label="Digest Time"
+                      field="digestTime"
+                      description="Time to send daily digest emails"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Quiet Hours */}
+              <div className="mb-8">
+                <h3 className="text-md font-medium mb-4 text-gray-900">Quiet Hours</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <NotificationToggle
+                    label="Enable Quiet Hours"
+                    field="quietHoursEnabled"
+                    description="Pause notifications during specified hours"
+                  />
+                  {notificationPreferences.quietHoursEnabled && (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <TimeInput
+                        label="Quiet Hours Start"
+                        field="quietHoursStart"
+                        description="When to start quiet hours"
+                      />
+                      <TimeInput
+                        label="Quiet Hours End"
+                        field="quietHoursEnd"
+                        description="When to end quiet hours"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
+                  onClick={handleNotificationSave}
+                  disabled={notificationLoading}
+                >
+                  {notificationLoading ? "Saving..." : "Save Preferences"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Theme Tab (All Users) */}
+      {activeTab === "theme" && (
+        <ThemeSettings />
+      )}
+
+      {/* Security Tab (All Users) */}
+      {activeTab === "security" && (
+        <SecuritySettings />
+      )}
+
+      {/* Organization Tab (Manager Only) */}
+      {activeTab === "organization" && isManager && (
+        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
+          <h2 className="text-lg font-medium mb-4">Organization Settings (Manager)</h2>
+          <div className="text-gray-600">(Organization settings coming soon)</div>
+        </div>
+      )}
+
+      {/* API Keys Tab (Super Admin & Manager) */}
+      {activeTab === "apiKeys" && (isSuperAdmin || isManager) && (
+        <ApiKeySettings />
       )}
     </div>
   );

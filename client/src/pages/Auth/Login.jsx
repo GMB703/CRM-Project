@@ -8,7 +8,7 @@ import {
   selectAuthError,
   selectIsSuperAdmin,
 } from "../../store/slices/authSlice";
-import { LoadingSpinner } from "../../components/UI/LoadingSpinner.jsx";
+import { Spinner } from "../../components/UI/Spinner";
 import toast from "react-hot-toast";
 import { login as loginAPI } from "../../services/authAPI";
 
@@ -60,7 +60,7 @@ const Login = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+        <Spinner />
       </div>
     );
   }

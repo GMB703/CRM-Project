@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { PaperAirplaneIcon, PaperClipIcon } from "@heroicons/react/24/outline";
-import { LoadingSpinner } from "../../../components/UI/LoadingSpinner.jsx";
+import { Spinner } from "../../../components/UI/Spinner";
 
 const TeamChat = () => {
   const [messages, setMessages] = useState([]);
@@ -124,7 +124,7 @@ const TeamChat = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
+        <Spinner size="lg" />
       </div>
     );
   }

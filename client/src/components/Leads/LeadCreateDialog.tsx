@@ -172,4 +172,4 @@ const LeadCreateDialog = () => {
   );
 };
 
-export { LeadCreateDialog }; 
+export default LeadCreateDialog; 

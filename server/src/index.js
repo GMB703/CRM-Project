@@ -8,11 +8,18 @@ import organizationRoutes from './routes/organizations.js';
 import analyticsRoutes from './routes/analytics.js';
 import dashboardRoutes from './routes/dashboard.js';
 import superAdminRoutes from './routes/superAdmin.js';
+import communicationRoutes from './routes/communications.js';
+import fileRoutes from './routes/files.js';
 import errorHandler from './middleware/errorHandler.js';
 import { isAuthenticated } from './middleware/auth.js';
 import usersRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import clientsRoutes from './routes/clients.js';
+import permissionsRoutes from './routes/permissions.js';
+import apiKeyRoutes from './routes/apiKeys.js';
+import paymentRoutes from './routes/payments.js';
+import contractRoutes from './routes/contracts.js';
+import clientPortalRoutes from './routes/clientPortal.js';
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET'];
@@ -56,9 +63,16 @@ app.use('/api/organizations', isAuthenticated, organizationRoutes);
 app.use('/api/analytics', isAuthenticated, analyticsRoutes);
 app.use('/api/dashboard', isAuthenticated, dashboardRoutes);
 app.use('/api/super-admin', isAuthenticated, superAdminRoutes);
+app.use('/api/communications', isAuthenticated, communicationRoutes);
+app.use('/api/files', isAuthenticated, fileRoutes);
 app.use('/api/users', isAuthenticated, usersRoutes);
 app.use('/api/admin', isAuthenticated, adminRoutes);
 app.use('/api/clients', isAuthenticated, clientsRoutes);
+app.use('/api/permissions', isAuthenticated, permissionsRoutes);
+app.use('/api/api-keys', isAuthenticated, apiKeyRoutes);
+app.use('/api/payments', isAuthenticated, paymentRoutes);
+app.use('/api/contracts', isAuthenticated, contractRoutes);
+app.use('/api/client-portal', clientPortalRoutes);
 
 // Error handling
 app.use(errorHandler);

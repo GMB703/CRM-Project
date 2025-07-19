@@ -1,5 +1,5 @@
 import React from "react";
-import InactivitySettings from "./InactivitySettings.jsx";
+import { InactivitySettings } from "./InactivitySettings.jsx";
 import { Box, Divider } from "@mui/material";
 
 const LeadDetail = ({ lead, onUpdate }) => (

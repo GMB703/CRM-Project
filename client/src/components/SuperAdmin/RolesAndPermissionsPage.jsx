@@ -22,10 +22,12 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { api } from "../../services/api";
-import { useAuth } from "../../contexts/AuthContext";
+import { useSelector } from "react-redux";
+import { selectCurrentUser, selectIsSuperAdmin } from "../../store/slices/authSlice";
 
 const RolesAndPermissionsPage = () => {
-  const { user: currentUser } = useAuth();
+  const currentUser = useSelector(selectCurrentUser);
+  const isSuperAdmin = useSelector(selectIsSuperAdmin);
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [users, setUsers] = useState([]);
@@ -57,10 +59,10 @@ const RolesAndPermissionsPage = () => {
   });
 
   useEffect(() => {
-    if (currentUser?.role === "SUPER_ADMIN") {
+    if (isSuperAdmin || currentUser?.role === "SUPER_ADMIN") {
       loadData();
     }
-  }, [currentUser]);
+  }, [currentUser, isSuperAdmin]);
 
   const loadData = async () => {
     setLoading(true);
@@ -321,7 +323,7 @@ const RolesAndPermissionsPage = () => {
     }
   };
 
-  if (currentUser?.role !== "SUPER_ADMIN") {
+  if (!isSuperAdmin && currentUser?.role !== "SUPER_ADMIN") {
     return (
       <Alert severity="error">
         You do not have permission to access this page.

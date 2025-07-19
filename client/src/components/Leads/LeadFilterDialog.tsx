@@ -173,4 +173,4 @@ const LeadFilterDialog = () => {
   );
 };
 
-export { LeadFilterDialog }; 
+export default LeadFilterDialog; 

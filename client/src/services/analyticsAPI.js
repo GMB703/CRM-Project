@@ -61,23 +61,12 @@ export const getPipelineAnalytics = async (filters = {}) => {
   }
 };
 
-/**
- * Get revenue analytics data
- * @param {Object} params - Revenue parameters
- * @param {string} params.startDate - Start date for revenue analysis
- * @param {string} params.endDate - End date for revenue analysis
- * @returns {Promise<Object>} Revenue analytics data
- */
-export const getRevenueAnalytics = async ({ startDate, endDate }) => {
-  try {
-    const response = await api.get("/analytics/revenue", {
-      params: { startDate, endDate },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching revenue analytics:", error);
-    throw error;
-  }
+export const getLeadAnalytics = async () => {
+  return api.get('/analytics/leads');
+};
+
+export const getRevenueAnalytics = async () => {
+  return api.get('/analytics/revenue');
 };
 
 /**

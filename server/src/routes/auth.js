@@ -5,8 +5,9 @@ import { body, validationResult } from 'express-validator';
 import { PrismaClient } from '@prisma/client';
 import asyncHandler from 'express-async-handler';
 import { createMultiTenantMiddleware } from '../middleware/multiTenant.js';
-import { authorize } from '../middleware/auth.js';
+import { authorize, isAuthenticated } from '../middleware/auth.js';
 import { logEvent } from '../services/auditLogService.js';
+import { createOrgContext } from '../services/databaseService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -584,6 +585,7 @@ router.post('/logout', (req, res) => {
 // @access  Private
 router.put(
   '/updatepassword',
+  isAuthenticated,
   [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
     body('newPassword')
@@ -1057,6 +1059,528 @@ router.post(
     }
   })
 );
+
+// @desc    Get user notification preferences
+// @route   GET /api/auth/notification-preferences
+// @access  Private
+router.get(
+  '/notification-preferences',
+  asyncHandler(async (req, res) => {
+    // Get token from header
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication token required',
+      });
+    }
+
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      let preferences = await prisma.userNotificationPreferences.findUnique({
+        where: { userId: decoded.id }
+      });
+
+      // If no preferences exist, create default ones
+      if (!preferences) {
+        preferences = await prisma.userNotificationPreferences.create({
+          data: {
+            userId: decoded.id
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        data: preferences
+      });
+    } catch (error) {
+      console.error('Get notification preferences error:', error);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token',
+        });
+      }
+      
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Token expired',
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  })
+);
+
+// @desc    Update user notification preferences
+// @route   PUT /api/auth/notification-preferences
+// @access  Private
+router.put(
+  '/notification-preferences',
+  [
+    body('emailNotifications').optional().isBoolean(),
+    body('smsNotifications').optional().isBoolean(),
+    body('pushNotifications').optional().isBoolean(),
+    body('inAppNotifications').optional().isBoolean(),
+    body('taskDueNotifications').optional().isBoolean(),
+    body('projectUpdateNotifications').optional().isBoolean(),
+    body('invoiceDueNotifications').optional().isBoolean(),
+    body('estimateAcceptedNotifications').optional().isBoolean(),
+    body('estimateRejectedNotifications').optional().isBoolean(),
+    body('paymentReceivedNotifications').optional().isBoolean(),
+    body('systemAlertNotifications').optional().isBoolean(),
+    body('inactivityReminderNotifications').optional().isBoolean(),
+    body('dailyDigestEnabled').optional().isBoolean(),
+    body('weeklyDigestEnabled').optional().isBoolean(),
+    body('digestTime').optional().isString(),
+    body('quietHoursEnabled').optional().isBoolean(),
+    body('quietHoursStart').optional().isString(),
+    body('quietHoursEnd').optional().isString(),
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array(),
+      });
+    }
+
+    // Get token from header
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication token required',
+      });
+    }
+
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Update or create preferences
+      const preferences = await prisma.userNotificationPreferences.upsert({
+        where: { userId: decoded.id },
+        update: req.body,
+        create: {
+          userId: decoded.id,
+          ...req.body
+        }
+      });
+
+      res.json({
+        success: true,
+        data: preferences,
+        message: 'Notification preferences updated successfully'
+      });
+    } catch (error) {
+      console.error('Update notification preferences error:', error);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token',
+        });
+      }
+      
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Token expired',
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  })
+);
+
+// @desc    Get organization theme
+// @route   GET /api/auth/organization-theme
+// @access  Private
+router.get(
+  '/organization-theme',
+  asyncHandler(async (req, res) => {
+    // Get token from header
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication token required',
+      });
+    }
+
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get user with organization
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        include: { organization: true }
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      // For superadmins, return a default theme since they don't belong to a specific organization
+      if (user.role === 'SUPER_ADMIN') {
+        const defaultTheme = {
+          id: 'default',
+          organizationId: null,
+          primaryColor: "#1976d2",
+          secondaryColor: "#dc004e",
+          accentColor: "#f50057",
+          companyName: "CRM System",
+          darkMode: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        return res.json({
+          success: true,
+          data: defaultTheme
+        });
+      }
+
+      if (!user.organizationId) {
+        return res.status(404).json({
+          success: false,
+          message: 'No organization assigned',
+        });
+      }
+
+      // Get or create organization theme
+      let theme = await prisma.organizationTheme.findUnique({
+        where: { organizationId: user.organizationId }
+      });
+
+      if (!theme) {
+        // Create default theme
+        theme = await prisma.organizationTheme.create({
+          data: {
+            organizationId: user.organizationId,
+            primaryColor: "#1976d2",
+            secondaryColor: "#dc004e",
+            accentColor: "#f50057",
+            companyName: user.organization?.name || "CRM System",
+            darkMode: false,
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        data: theme
+      });
+    } catch (error) {
+      console.error('Get organization theme error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get organization theme',
+      });
+    }
+  })
+);
+
+// @desc    Update organization theme
+// @route   PUT /api/auth/organization-theme
+// @access  Private (Admin/Manager only)
+router.put(
+  '/organization-theme',
+  asyncHandler(async (req, res) => {
+    // Get token from header
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication token required',
+      });
+    }
+
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get user with organization
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        include: { organization: true }
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      // For superadmins, return success but don't save to database since they don't have an organization
+      if (user.role === 'SUPER_ADMIN') {
+        const defaultTheme = {
+          id: 'default',
+          organizationId: null,
+          ...req.body,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        return res.json({
+          success: true,
+          data: defaultTheme,
+          message: 'Theme preferences updated successfully (Super Admin mode)'
+        });
+      }
+
+      if (!user.organizationId) {
+        return res.status(404).json({
+          success: false,
+          message: 'No organization assigned',
+        });
+      }
+
+      // Check if user has permission to update theme (Admin/Manager)
+      if (user.organizationRole !== 'OWNER' && user.organizationRole !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions to update organization theme',
+        });
+      }
+
+      // Update or create organization theme
+      const theme = await prisma.organizationTheme.upsert({
+        where: { organizationId: user.organizationId },
+        update: req.body,
+        create: {
+          organizationId: user.organizationId,
+          ...req.body
+        }
+      });
+
+      res.json({
+        success: true,
+        data: theme,
+        message: 'Organization theme updated successfully'
+      });
+    } catch (error) {
+      console.error('Update organization theme error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update organization theme',
+      });
+    }
+  })
+);
+
+// @desc    Get user's login history
+// @route   GET /api/auth/login-history
+// @access  Private
+router.get('/login-history', isAuthenticated, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Get audit logs for login events
+  const loginHistory = await prisma.auditLog.findMany({
+    where: {
+      userId: userId,
+      action: { in: ['LOGIN_SUCCESS', 'LOGIN_FAILURE'] }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: {
+      id: true,
+      action: true,
+      ipAddress: true,
+      userAgent: true,
+      createdAt: true,
+      details: true
+    }
+  });
+
+  res.json({
+    success: true,
+    data: loginHistory.map(log => ({
+      id: log.id,
+      type: log.action,
+      ipAddress: log.ipAddress,
+      userAgent: log.userAgent,
+      timestamp: log.createdAt,
+      success: log.action === 'LOGIN_SUCCESS',
+      location: log.details?.location || 'Unknown',
+      device: parseUserAgent(log.userAgent)
+    }))
+  });
+}));
+
+// @desc    Get user's active sessions
+// @route   GET /api/auth/active-sessions
+// @access  Private
+router.get('/active-sessions', isAuthenticated, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // For now, return current session info
+  // In a real implementation, you'd track active sessions in a separate table
+  const currentSession = {
+    id: req.headers.authorization?.split(' ')[1]?.substring(0, 8) + '...',
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+    lastActivity: new Date(),
+    isCurrent: true
+  };
+
+  res.json({
+    success: true,
+    data: [currentSession]
+  });
+}));
+
+// @desc    Logout from all other sessions
+// @route   POST /api/auth/logout-all-sessions
+// @access  Private
+router.post('/logout-all-sessions', isAuthenticated, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Increment token version to invalidate all existing tokens
+  await prisma.user.update({
+    where: { id: userId },
+    data: { 
+      tokenVersion: {
+        increment: 1
+      }
+    }
+  });
+
+  // Log the action
+  await logEvent({
+    userId: userId,
+    organizationId: req.user.organizationId,
+    action: 'LOGOUT_ALL_SESSIONS',
+    targetType: 'Auth',
+    details: { reason: 'User requested logout from all sessions' },
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
+  res.json({
+    success: true,
+    message: 'All sessions have been logged out'
+  });
+}));
+
+// @desc    Get security settings
+// @route   GET /api/auth/security-settings
+// @access  Private
+router.get('/security-settings', isAuthenticated, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Get user's security preferences
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      twoFactorEnabled: true,
+      lastPasswordChange: true,
+      failedLoginAttempts: true,
+      accountLockedUntil: true
+    }
+  });
+
+  res.json({
+    success: true,
+    data: {
+      twoFactorEnabled: user.twoFactorEnabled || false,
+      lastPasswordChange: user.lastPasswordChange,
+      failedLoginAttempts: user.failedLoginAttempts || 0,
+      accountLockedUntil: user.accountLockedUntil,
+      passwordAge: user.lastPasswordChange ? 
+        Math.floor((Date.now() - new Date(user.lastPasswordChange).getTime()) / (1000 * 60 * 60 * 24)) : 
+        null
+    }
+  });
+}));
+
+// @desc    Update security settings
+// @route   PUT /api/auth/security-settings
+// @access  Private
+router.put('/security-settings', isAuthenticated, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { twoFactorEnabled } = req.body;
+
+  // Update security settings
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      twoFactorEnabled: twoFactorEnabled
+    }
+  });
+
+  // Log the action
+  await logEvent({
+    userId: userId,
+    organizationId: req.user.organizationId,
+    action: 'SECURITY_SETTINGS_UPDATED',
+    targetType: 'User',
+    targetId: userId,
+    details: { twoFactorEnabled },
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
+  res.json({
+    success: true,
+    message: 'Security settings updated successfully',
+    data: {
+      twoFactorEnabled: updatedUser.twoFactorEnabled
+    }
+  });
+}));
+
+// Helper function to parse user agent
+function parseUserAgent(userAgent) {
+  if (!userAgent) return 'Unknown';
+  
+  // Simple parsing - in production, use a proper user-agent parser
+  if (userAgent.includes('Chrome')) return 'Chrome';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Safari')) return 'Safari';
+  if (userAgent.includes('Edge')) return 'Edge';
+  if (userAgent.includes('Mobile')) return 'Mobile Browser';
+  
+  return 'Other Browser';
+}
 
 export default router;
 

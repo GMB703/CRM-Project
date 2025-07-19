@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import {
   PlusIcon,
@@ -12,7 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrganization } from "../../contexts/OrganizationContext.jsx";
-import { LoadingSpinner } from "../UI/LoadingSpinner.jsx";
+import { Spinner } from "../UI/Spinner";
 import { Button } from "../UI/Button.jsx";
 import { api } from "../../services/api";
 
@@ -753,7 +753,7 @@ const EstimateForm = ({ estimate, onSubmit, onCancel }) => {
         >
           {loading ? (
             <>
-              <LoadingSpinner size="sm" className="mr-2" />
+              <Spinner size="sm" className="mr-2" />
               {estimate ? "Updating..." : "Creating..."}
             </>
           ) : estimate ? (

@@ -38,7 +38,7 @@ export class SocketService {
     this.currentOrganizationId = organizationId;
     this.isConnecting = true;
 
-    const serverUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const serverUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
     console.log(
       `🔌 Connecting to Socket.IO server: ${serverUrl} (Org: ${organizationId})`,

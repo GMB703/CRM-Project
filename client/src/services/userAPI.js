@@ -15,11 +15,19 @@ export const getUsers = async () => {
 };
 
 export const createUser = async (userData) => {
-  return api.post("/users", userData);
+  return api.post('/super-admin/users', userData);
 };
 
-export const updateUser = async (id, userData) => {
-  return api.put(`/users/${id}`, userData);
+export const updateUser = async (id, data) => {
+  return api.put(`/users/${id}`, data);
+};
+
+export const getUsersByOrganization = async (orgId) => {
+  return api.get(`/super-admin/organizations/${orgId}/users`);
+};
+
+export const getUserActivitySummary = async () => {
+  return api.get('/super-admin/user-activity-summary');
 };
 
 export const deleteUser = async (id) => {

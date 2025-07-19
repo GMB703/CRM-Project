@@ -1,2 +1,2 @@
 export { default as EstimateForm } from './EstimateForm';
-export { default as EstimateViewer } from './EstimateViewer'; 
+export { EstimateViewer } from './EstimateViewer'; 

@@ -44,9 +44,14 @@ router.post('/users', requireRole('SUPER_ADMIN', 'ORG_ADMIN'), async (req, res) 
   try {
     const { email, password, firstName, lastName, role, organizationId } = req.body;
 
+    // Ensure a non-empty password (UI might omit). Generate a temp one if missing.
+    const plainPassword = password && password.trim() !== ''
+      ? password.trim()
+      : 'Temp123!'; // default temporary password
+
     // Hash password using bcrypt directly since we don't have a utils/auth file
     const bcrypt = await import('bcrypt');
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(String(plainPassword), 10);
     
     const user = await prisma.user.create({
       data: {
@@ -146,17 +151,9 @@ router.post('/organizations', async (req, res) => {
 router.get('/organizations', async (req, res) => {
   try {
     const organizations = await prisma.organization.findMany({
-      include: {
-        organizationSettings: true,
-        users: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
       }
     });
 
@@ -167,8 +164,47 @@ router.get('/organizations', async (req, res) => {
   }
 });
 
-// Update organization
-router.put('/organizations/:id', async (req, res) => {
+const getOrganizationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const organization = await prisma.organization.findUnique({
+      where: { id },
+      include: {
+        users: true,
+        clients: true,
+        projects: true,
+      },
+    });
+    if (!organization) {
+      return res
+        .status(404)
+        .json({ success: false, error: 'Organization not found' });
+    }
+    res.json({ success: true, data: organization });
+  } catch (error) {
+    console.error('Get organization by ID error:', error);
+    res
+      .status(500)
+      .json({ success: false, error: 'Failed to get organization' });
+  }
+};
+
+const getUsersByOrganization = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const users = await prisma.user.findMany({
+      where: { organizationId: orgId },
+    });
+    res.json({ success: true, data: users });
+  } catch (error) {
+    console.error('Get users by organization error:', error);
+    res
+      .status(500)
+      .json({ success: false, error: 'Failed to get users for organization' });
+  }
+};
+
+const updateOrganization = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, code, settings } = req.body;
@@ -178,14 +214,51 @@ router.put('/organizations/:id', async (req, res) => {
       data: {
         name,
         code,
-        settings
-      }
+        settings,
+      },
     });
 
     res.json({ success: true, data: organization });
   } catch (error) {
     console.error('Update organization error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update organization' });
+    res
+      .status(500)
+      .json({ success: false, error: 'Failed to update organization' });
+  }
+};
+
+// Get a specific organization
+router.get('/organizations/:id', getOrganizationById);
+
+// Get all users for a specific organization
+router.get(
+  "/organizations/:orgId/users",
+  getUsersByOrganization,
+);
+
+// Update a specific organization
+router.put('/organizations/:id', updateOrganization);
+
+// Get user activity summary
+router.get('/user-activity-summary', async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [totalUsers, newUsers, activeUsers] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      prisma.user.count({ where: { lastLoginAt: { gte: sevenDaysAgo } } }),
+    ]);
+
+    res.json({
+      success: true,
+      data: { totalUsers, newUsers, activeUsers },
+    });
+  } catch (error) {
+    console.error('Get user activity summary error:', error);
+    res
+      .status(500)
+      .json({ success: false, error: 'Failed to get user activity summary' });
   }
 });
 

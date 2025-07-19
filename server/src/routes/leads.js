@@ -1,53 +1,54 @@
 import express from 'express';
-import { isAuthenticated, authorize } from '../middleware/auth.js';
 import { PrismaClient } from '@prisma/client';
+import { isAuthenticated } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Get all leads for the organization
+// Get all leads
 router.get('/', isAuthenticated, async (req, res) => {
   try {
     const leads = await prisma.lead.findMany({
       where: { organizationId: req.user.organizationId },
-      include: {
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
     });
-    res.json({ data: leads });
+    res.json({ success: true, data: leads });
   } catch (error) {
-    console.error('Error fetching leads:', error);
-    res.status(500).json({ error: 'Failed to fetch leads' });
+    console.error('Get leads error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get leads' });
+  }
+});
+
+// Get a single lead
+router.get('/:id', isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+    });
+    if (!lead || lead.organizationId !== req.user.organizationId) {
+      return res.status(404).json({ success: false, error: 'Lead not found' });
+    }
+    res.json({ success: true, data: lead });
+  } catch (error) {
+    console.error('Get lead error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get lead' });
   }
 });
 
 // Create a new lead
 router.post('/', isAuthenticated, async (req, res) => {
   try {
-    const { name, email, phone, status, source, notes } = req.body;
+    const { ...leadData } = req.body;
     const lead = await prisma.lead.create({
       data: {
-        name,
-        email,
-        phone,
-        status,
-        source,
-        notes,
+        ...leadData,
         organizationId: req.user.organizationId,
-        assignedToId: req.user.id
-      }
+      },
     });
-    res.status(201).json({ data: lead });
+    res.json({ success: true, data: lead });
   } catch (error) {
-    console.error('Error creating lead:', error);
-    res.status(500).json({ error: 'Failed to create lead' });
+    console.error('Create lead error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create lead' });
   }
 });
 
@@ -55,35 +56,32 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.put('/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
+    const { ...leadData } = req.body;
     const lead = await prisma.lead.update({
-      where: { 
-        id,
-        organizationId: req.user.organizationId
+      where: { id },
+      data: {
+        ...leadData,
       },
-      data: req.body
     });
-    res.json({ data: lead });
+    res.json({ success: true, data: lead });
   } catch (error) {
-    console.error('Error updating lead:', error);
-    res.status(500).json({ error: 'Failed to update lead' });
+    console.error('Update lead error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update lead' });
   }
 });
 
 // Delete a lead
-router.delete('/:id', isAuthenticated, authorize('ADMIN', 'SUPER_ADMIN'), async (req, res) => {
+router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.lead.delete({
-      where: { 
-        id,
-        organizationId: req.user.organizationId
-      }
+      where: { id },
     });
-    res.json({ message: 'Lead deleted successfully' });
+    res.json({ success: true, message: 'Lead deleted successfully' });
   } catch (error) {
-    console.error('Error deleting lead:', error);
-    res.status(500).json({ error: 'Failed to delete lead' });
+    console.error('Delete lead error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete lead' });
   }
 });
 
-export default router;
+export { router as default };

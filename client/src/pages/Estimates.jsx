@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import {
   PlusIcon,
@@ -17,7 +17,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../hooks/useAuth";
 import { useOrganization } from "../contexts/OrganizationContext.jsx";
-import { LoadingSpinner } from "../components/UI/LoadingSpinner.jsx";
+import { Spinner } from "../components/UI/Spinner";
 import { Modal } from "../components/UI/Modal.jsx";
 import { Button } from "../components/UI/Button.jsx";
 import { EstimateForm } from "../components/Estimates/EstimateForm.jsx";
@@ -197,7 +197,7 @@ const Estimates = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -346,7 +346,7 @@ const Estimates = () => {
                           title="Download PDF"
                         >
                           {actionLoading === `pdf-${estimate.id}` ? (
-                            <LoadingSpinner size="sm" />
+                            <Spinner size="sm" />
                           ) : (
                             <DocumentArrowDownIcon className="w-4 h-4" />
                           )}
@@ -358,7 +358,7 @@ const Estimates = () => {
                           title="Email"
                         >
                           {actionLoading === `email-${estimate.id}` ? (
-                            <LoadingSpinner size="sm" />
+                            <Spinner size="sm" />
                           ) : (
                             <EnvelopeIcon className="w-4 h-4" />
                           )}
@@ -370,7 +370,7 @@ const Estimates = () => {
                           title="Delete"
                         >
                           {actionLoading === estimate.id ? (
-                            <LoadingSpinner size="sm" />
+                            <Spinner size="sm" />
                           ) : (
                             <TrashIcon className="w-4 h-4" />
                           )}

@@ -7,6 +7,7 @@ import {
   UserCircleIcon,
   MagnifyingGlassIcon,
   ChevronDownIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import {
   toggleMobileSidebar,
@@ -95,6 +96,19 @@ const Header = () => {
             </div>
           )}
 
+          {/* Context Switcher button - Only for Super Admins */}
+          {user?.role === "SUPER_ADMIN" && (
+            <button
+              type="button"
+              className="-m-2.5 p-2.5 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+              onClick={() => navigate("/super-admin")}
+              title="User Activity & Context Switcher"
+            >
+              <span className="sr-only">User Activity & Context Switcher</span>
+              <UserGroupIcon className="h-6 w-6" aria-hidden="true" />
+            </button>
+          )}
+
           {/* Notifications button */}
           <button
             type="button"
@@ -150,7 +164,7 @@ const Header = () => {
                     navigate(
                       user?.role === "SUPER_ADMIN"
                         ? "/super-admin/settings"
-                        : "/dashboard/settings",
+                        : "/dashboard/settings"
                     );
                   }}
                   className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"

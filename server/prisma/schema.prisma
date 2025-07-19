@@ -40,6 +40,13 @@ model Organization {
   reportTemplates          ReportTemplate[]
   userOrganizations        UserOrganization[]
   users                    User[]
+  organizationTheme        OrganizationTheme?
+  apiKeys                  ApiKey[]
+  leads                    Lead[]
+  files                    File[]
+  contracts                Contract[]
+  comments                 Comment[]
+  contractTemplates        ContractTemplate[]
 
   @@map("organizations")
 }
@@ -71,47 +78,61 @@ model OrganizationSettings {
 }
 
 model User {
-  id                      String                    @id @default(uuid())
-  email                   String                    @unique
-  password                String
-  firstName               String?
-  lastName                String?
-  phone                   String?
-  avatar                  String?
-  role                    UserRole                  @default(USER)
-  organizationRole        OrganizationRole          @default(MEMBER)
-  isActive                Boolean                   @default(true)
-  lastLoginAt             DateTime?
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
-  organizationId          String?
-  activityLogs            ActivityLog[]
-  catalogItems            CatalogItem[]
-  clientPortalMessages    ClientPortalMessage[]
-  approvedEstimates       Estimate[]                @relation("EstimateApprover")
-  estimates               Estimate[]                @relation("EstimateCreator")
-  estimateApprovals       EstimateApproval[]
-  estimateEmailLogs       EstimateEmailLog[]
-  userRoleAssignments     UserRoleAssignment[]
-  userPermissionGrants    UserPermissionGrant[]
-  teamChatMessages        TeamChatMessage[]
-  auditLogs               AuditLog[]
-  assignedLeads           Client[]                  @relation("LeadAssignee")
-  createdAutomations      CommunicationAutomation[] @relation("AutomationCreator")
-  communications          Communication[]
-  estimateTemplates       EstimateTemplate[]
-  invoices                Invoice[]
-  leadActivities          LeadActivity[]            @relation("LeadActivityUser")
-  sentMessages            MessageHistory[]          @relation("MessageSender")
-  createdMessageTemplates MessageTemplate[]         @relation("MessageTemplateCreator")
-  notes                   Note[]
-  notifications           Notification[]
-  createdProjects         Project[]                 @relation("ProjectCreator")
-  createdReportTemplates  ReportTemplate[]          @relation("ReportTemplateCreator")
-  assignedTasks           Task[]
-  userOrganizations       UserOrganization[]
-  organization            Organization?             @relation(fields: [organizationId], references: [id])
-  assignedProjects        Project[]                 @relation("ProjectAssignee")
+  id                          String                       @id @default(uuid())
+  email                       String                       @unique
+  password                    String
+  firstName                   String?
+  lastName                    String?
+  phone                       String?
+  avatar                      String?
+  role                        UserRole                     @default(USER)
+  organizationRole            OrganizationRole             @default(MEMBER)
+  isActive                    Boolean                      @default(true)
+  lastLoginAt                 DateTime?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  organizationId              String?
+  // Security fields
+  tokenVersion                Int                          @default(1)
+  twoFactorEnabled            Boolean                      @default(false)
+  twoFactorSecret             String?
+  lastPasswordChange          DateTime?
+  failedLoginAttempts         Int                          @default(0)
+  accountLockedUntil          DateTime?
+  activityLogs                ActivityLog[]
+  catalogItems                CatalogItem[]
+  clientPortalMessages        ClientPortalMessage[]
+  approvedEstimates           Estimate[]                   @relation("EstimateApprover")
+  estimates                   Estimate[]                   @relation("EstimateCreator")
+  estimateApprovals           EstimateApproval[]
+  estimateEmailLogs           EstimateEmailLog[]
+  teamChatMessages            TeamChatMessage[]
+  userPermissionGrants        UserPermissionGrant[]
+  userRoleAssignments         UserRoleAssignment[]
+  auditLogs                   AuditLog[]
+  assignedLeads               Lead[]                       @relation("LeadAssignee")
+  createdAutomations          CommunicationAutomation[]    @relation("AutomationCreator")
+  communications              Communication[]
+  estimateTemplates           EstimateTemplate[]
+  invoices                    Invoice[]
+  leadActivities              LeadActivity[]               @relation("LeadActivityUser")
+  sentMessages                MessageHistory[]             @relation("SentMessages")
+  receivedMessages            MessageHistory[]             @relation("ReceivedMessages")
+  createdMessageTemplates     MessageTemplate[]            @relation("CreatedMessageTemplates")
+  notes                       Note[]
+  notifications               Notification[]
+  createdProjects             Project[]                    @relation("ProjectCreator")
+  createdReportTemplates      ReportTemplate[]             @relation("ReportTemplateCreator")
+  assignedTasks               Task[]
+  userNotificationPreferences UserNotificationPreferences?
+  userOrganizations           UserOrganization[]
+  organization                Organization?                @relation(fields: [organizationId], references: [id])
+  assignedProjects            Project[]                    @relation("ProjectAssignee")
+  apiKeys                     ApiKey[]
+  leads                       Lead[]
+  files                       File[]
+  contracts                   Contract[]
+  comments                    Comment[]
 
   @@unique([email, organizationId])
   @@index([organizationId])
@@ -119,6 +140,40 @@ model User {
   @@index([organizationId, isActive])
   @@index([email])
   @@map("users")
+}
+
+model Lead {
+  id                   String        @id @default(cuid())
+  firstName            String
+  lastName             String
+  email                String
+  phone                String?
+  company              String?
+  source               LeadSource?
+  tags                 String[]
+  status               ClientStatus  @default(ACTIVE)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  organizationId       String
+  assignedUserId       String?
+  leadScore            Int?
+  lastContactedAt      DateTime?
+  nextFollowUpAt       DateTime?
+  estimatedValue       Decimal?      @db.Decimal(10, 2)
+  organization         Organization  @relation(fields: [organizationId], references: [id])
+  assignedUser         User?         @relation("LeadAssignee", fields: [assignedUserId], references: [id])
+  user                 User?         @relation(fields: [userId], references: [id])
+  userId               String?
+
+  @@unique([email, organizationId])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, source])
+  @@index([organizationId, assignedUserId])
+  @@index([organizationId, nextFollowUpAt])
+  @@index([organizationId, leadScore])
+  @@map("leads")
 }
 
 model UserOrganization {
@@ -152,27 +207,14 @@ model Client {
   city                 String?
   state                String?
   zipCode              String?
-  source               LeadSource?
-  tags                 String[]
-  status               ClientStatus          @default(ACTIVE)
+  password             String
   noteText             String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   organizationId       String
-  leadStage            String?
-  assignedUserId       String?
-  leadScore            Int?
-  lastContactedAt      DateTime?
-  nextFollowUpAt       DateTime?
-  convertedAt          DateTime?
-  estimatedValue       Decimal?              @db.Decimal(10, 2)
   actualValue          Decimal?              @db.Decimal(10, 2)
-  inactivityThreshold  Int?                  @default(7)
-  reminderFrequency    Int?                  @default(1)
-  lastReminderSentAt   DateTime?
   clientPortalMessages ClientPortalMessage[]
   estimates            Estimate[]
-  assignedUser         User?                 @relation("LeadAssignee", fields: [assignedUserId], references: [id])
   organization         Organization          @relation(fields: [organizationId], references: [id])
   communications       Communication[]
   invoices             Invoice[]
@@ -180,16 +222,11 @@ model Client {
   messageHistory       MessageHistory[]
   notes                Note[]
   projects             Project[]
+  contracts            Contract[]
 
   @@unique([email, organizationId])
   @@index([organizationId])
-  @@index([organizationId, status])
   @@index([organizationId, createdAt])
-  @@index([organizationId, source])
-  @@index([organizationId, leadStage])
-  @@index([organizationId, assignedUserId])
-  @@index([organizationId, nextFollowUpAt])
-  @@index([organizationId, leadScore])
   @@map("clients")
 }
 
@@ -329,6 +366,8 @@ model Estimate {
   lineItems         EstimateLineItem[]
   payments          EstimatePayment[]
   contracts         Contract[]
+  comments          Comment[]
+  files             File[]
 
   @@unique([referenceNumber, organizationId])
   @@index([organizationId, status])
@@ -488,18 +527,52 @@ model EstimateTemplateLineItem {
 }
 
 model Contract {
-  id         String         @id @default(cuid())
-  title      String
-  content    String
-  status     ContractStatus @default(DRAFT)
-  signedAt   DateTime?
-  signedBy   String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  estimateId String
-  estimate   Estimate       @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  data           Json
+  url            String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  estimateId     String
+  estimate       Estimate @relation(fields: [estimateId], references: [id])
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id])
+  comments       Comment[]
+  files          File[]
 
   @@map("contracts")
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  text        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  estimateId  String?
+  estimate    Estimate? @relation(fields: [estimateId], references: [id])
+  contractId  String?
+  contract    Contract? @relation(fields: [contractId], references: [id])
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@map("comments")
+}
+
+model ContractTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  content        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("contract_templates")
 }
 
 model Invoice {
@@ -534,14 +607,15 @@ model Invoice {
 }
 
 model Payment {
-  id            String        @id @default(cuid())
-  amount        Decimal       @db.Decimal(10, 2)
-  paymentMethod PaymentMethod
-  reference     String?
-  notes         String?
-  createdAt     DateTime      @default(now())
-  invoiceId     String
-  invoice       Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  stripeId  String   @unique
+  amount    Int
+  currency  String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
 
   @@map("payments")
 }
@@ -647,6 +721,50 @@ model Notification {
   @@index([userId, type])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model UserNotificationPreferences {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  emailNotifications    Boolean  @default(true)
+  smsNotifications      Boolean  @default(false)
+  pushNotifications     Boolean  @default(true)
+  inAppNotifications    Boolean  @default(true)
+  taskDueNotifications  Boolean  @default(true)
+  projectUpdateNotifications Boolean @default(true)
+  invoiceDueNotifications Boolean @default(true)
+  estimateAcceptedNotifications Boolean @default(true)
+  estimateRejectedNotifications Boolean @default(true)
+  paymentReceivedNotifications Boolean @default(true)
+  systemAlertNotifications Boolean @default(true)
+  inactivityReminderNotifications Boolean @default(true)
+  dailyDigestEnabled    Boolean  @default(false)
+  weeklyDigestEnabled   Boolean  @default(false)
+  digestTime            String   @default("09:00")
+  quietHoursEnabled     Boolean  @default(false)
+  quietHoursStart       String   @default("22:00")
+  quietHoursEnd         String   @default("08:00")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_preferences")
+}
+
+model OrganizationTheme {
+  id            String   @id @default(cuid())
+  organizationId String  @unique
+  primaryColor  String   @default("#1976d2")
+  secondaryColor String  @default("#dc004e")
+  accentColor   String   @default("#f50057")
+  logoUrl       String?
+  companyName   String?
+  darkMode      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_themes")
 }
 
 model Setting {
@@ -759,32 +877,18 @@ model LeadActivity {
 }
 
 model MessageTemplate {
-  id                       String                    @id @default(cuid())
-  name                     String
-  description              String?
-  category                 MessageTemplateCategory
-  type                     CommunicationType
-  isActive                 Boolean                   @default(true)
-  subject                  String?
-  bodyText                 String
-  bodyHtml                 String?
-  variables                Json?
-  usageCount               Int                       @default(0)
-  lastUsedAt               DateTime?
-  organizationId           String
-  createdById              String
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  subject        String
+  body           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  creatorId      String
+  creator        User     @relation("CreatedMessageTemplates", fields: [creatorId], references: [id])
   communicationAutomations CommunicationAutomation[]
-  messageHistory           MessageHistory[]
-  createdBy                User                      @relation("MessageTemplateCreator", fields: [createdById], references: [id])
-  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([name, organizationId])
-  @@index([organizationId])
-  @@index([organizationId, category])
-  @@index([organizationId, type])
-  @@index([organizationId, isActive])
   @@map("message_templates")
 }
 
@@ -816,51 +920,25 @@ model CommunicationChannel {
 }
 
 model MessageHistory {
-  id                String                 @id @default(cuid())
-  subject           String?
-  bodyText          String
-  bodyHtml          String?
-  type              CommunicationType
-  direction         CommunicationDirection @default(OUTBOUND)
-  status            MessageStatus          @default(PENDING)
-  sentAt            DateTime?
-  deliveredAt       DateTime?
-  readAt            DateTime?
-  clickedAt         DateTime?
-  failedAt          DateTime?
-  errorMessage      String?
-  externalId        String?
-  externalStatus    String?
-  templateId        String?
-  templateVariables Json?
-  channelId         String?
-  clientId          String?
-  projectId         String?
-  leadActivityId    String?
-  userId            String?
-  organizationId    String
-  recipientEmail    String?
-  recipientPhone    String?
-  recipientName     String?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  channel           CommunicationChannel?  @relation(fields: [channelId], references: [id])
-  client            Client?                @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  leadActivity      LeadActivity?          @relation(fields: [leadActivityId], references: [id])
-  organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project           Project?               @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  template          MessageTemplate?       @relation(fields: [templateId], references: [id])
-  user              User?                  @relation("MessageSender", fields: [userId], references: [id])
+  id             String   @id @default(cuid())
+  subject        String
+  body           String
+  sentAt         DateTime @default(now())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  senderId       String
+  sender         User     @relation("SentMessages", fields: [senderId], references: [id])
+  recipientId    String
+  recipient      User     @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  clientId       String?
+  client         Client?  @relation(fields: [clientId], references: [id])
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id])
+  leadActivityId String?
+  leadActivity   LeadActivity? @relation(fields: [leadActivityId], references: [id])
+  channelId      String?
+  channel        CommunicationChannel? @relation(fields: [channelId], references: [id])
 
-  @@index([organizationId])
-  @@index([clientId])
-  @@index([projectId])
-  @@index([userId])
-  @@index([organizationId, type])
-  @@index([organizationId, status])
-  @@index([organizationId, createdAt])
-  @@index([clientId, createdAt])
-  @@index([externalId])
   @@map("message_history")
 }
 
@@ -893,36 +971,36 @@ model CommunicationAutomation {
   @@map("communication_automations")
 }
 
-// --- RBAC Enhancement: Role-based permissions ---
 model Role {
-  id          String        @id @default(uuid())
-  name        String        @unique
+  id          String               @id @default(uuid())
+  name        String               @unique
   description String?
-  userRoles   UserRoleAssignment[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   permissions RolePermission[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  userRoles   UserRoleAssignment[]
 }
 
 model Permission {
-  id          String        @id @default(uuid())
-  module      String
-  action      String
-  description String?
+  id              String                @id @default(uuid())
+  module          String
+  action          String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  description     String?
   rolePermissions RolePermission[]
-  userGrants  UserPermissionGrant[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  userGrants      UserPermissionGrant[]
 }
 
 model RolePermission {
   id           String     @id @default(uuid())
   roleId       String
   permissionId String
-  role         Role       @relation(fields: [roleId], references: [id])
-  permission   Permission @relation(fields: [permissionId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
+
   @@unique([roleId, permissionId])
 }
 
@@ -930,10 +1008,11 @@ model UserRoleAssignment {
   id        String   @id @default(uuid())
   userId    String
   roleId    String
-  user      User     @relation(fields: [userId], references: [id])
-  role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  role      Role     @relation(fields: [roleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
   @@unique([userId, roleId])
 }
 
@@ -941,13 +1020,13 @@ model UserPermissionGrant {
   id           String     @id @default(uuid())
   userId       String
   permissionId String
-  user         User       @relation(fields: [userId], references: [id])
-  permission   Permission @relation(fields: [permissionId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
   @@unique([userId, permissionId])
 }
-// --- End RBAC Enhancement ---
 
 model ActivityLog {
   id        String   @id @default(uuid())
@@ -1021,7 +1100,7 @@ model ReportTemplate {
 }
 
 model AnalyticsMetric {
-  id             String              @id @default(uuid())
+  id             String              @id @default(cuid())
   metricKey      String
   metricName     String
   metricValue    Decimal             @db.Decimal(15, 4)
@@ -1038,6 +1117,25 @@ model AnalyticsMetric {
   @@index([organizationId, metricType])
   @@index([organizationId, periodStart])
   @@map("analytics_metrics")
+}
+
+model File {
+  id             String    @id @default(cuid())
+  name           String
+  url            String
+  size           Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  estimateId     String?
+  estimate       Estimate? @relation(fields: [estimateId], references: [id])
+  contractId     String?
+  contract       Contract? @relation(fields: [contractId], references: [id])
+
+  @@map("files")
 }
 
 model AuditLog {
@@ -1058,6 +1156,28 @@ model AuditLog {
   @@index([organizationId])
   @@index([action])
   @@map("audit_logs")
+}
+
+model ApiKey {
+  id             String           @id @default(uuid())
+  name           String
+  key            String           @unique
+  userId         String
+  organizationId String?
+  permissions    String[]         @default([])
+  isActive       Boolean          @default(true)
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([key])
+  @@index([isActive])
+  @@map("api_keys")
 }
 
 enum UserRole {

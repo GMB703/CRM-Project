@@ -1,19 +1,90 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "../../contexts/ThemeContext.jsx";
 import { useOrganization } from "../../contexts/OrganizationContext.jsx";
+import { getOrganizationTheme, updateOrganizationTheme } from "../../services/authAPI.js";
+import toast from "react-hot-toast";
 
 const ThemeSettings = () => {
-  const { theme, setTheme, toggleDarkMode } = useTheme();
-  const { currentOrganization } = useOrganization();
+  const { theme, setTheme, toggleDarkMode, resetTheme, setThemeMode } = useTheme();
+  const { organization } = useOrganization();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTheme, setIsLoadingTheme] = useState(true);
   const [localTheme, setLocalTheme] = useState({
-    primaryColor: theme.primaryColor,
-    secondaryColor: theme.secondaryColor,
-    accentColor: theme.accentColor,
-    logoUrl: theme.logoUrl,
-    companyName: theme.companyName,
-    darkMode: theme.darkMode,
+    primaryColor: theme.primaryColor || "#1976d2",
+    secondaryColor: theme.secondaryColor || "#dc004e",
+    accentColor: theme.accentColor || "#f50057",
+    logoUrl: theme.logoUrl || "/logo-default.png",
+    companyName: theme.companyName || "CRM System",
+    darkMode: theme.darkMode || false,
   });
+
+  // Load organization theme from backend
+  useEffect(() => {
+    const loadOrganizationTheme = async () => {
+      try {
+        setIsLoadingTheme(true);
+        const response = await getOrganizationTheme();
+        if (response.success && response.data) {
+          const orgTheme = response.data;
+          const newTheme = {
+            primaryColor: orgTheme.primaryColor || "#1976d2",
+            secondaryColor: orgTheme.secondaryColor || "#dc004e",
+            accentColor: orgTheme.accentColor || "#f50057",
+            logoUrl: orgTheme.logoUrl || "/logo-default.png",
+            companyName: orgTheme.companyName || "CRM System",
+            darkMode: orgTheme.darkMode || false,
+          };
+          setLocalTheme(newTheme);
+          // Don't update context theme here to prevent infinite loop
+          // Context theme will be updated only when user applies changes
+        }
+      } catch (error) {
+        console.error("Error loading organization theme:", error);
+        toast.error("Failed to load organization theme");
+      } finally {
+        setIsLoadingTheme(false);
+      }
+    };
+
+    loadOrganizationTheme();
+  }, []); // Empty dependency array to run only once
+
+  // Remove the problematic second useEffect that was causing the infinite loop
+  // The local theme will be managed independently and only updated when user makes changes
+
+  // CRM Theme Presets
+  const themePresets = {
+    default: {
+      name: "Default Blue",
+      primaryColor: "#1976d2",
+      secondaryColor: "#dc004e",
+      accentColor: "#f50057",
+    },
+    construction: {
+      name: "Construction Orange",
+      primaryColor: "#ff6b35",
+      secondaryColor: "#f7931e",
+      accentColor: "#ffd23f",
+    },
+    professional: {
+      name: "Professional Gray",
+      primaryColor: "#374151",
+      secondaryColor: "#6b7280",
+      accentColor: "#9ca3af",
+    },
+    modern: {
+      name: "Modern Green",
+      primaryColor: "#10b981",
+      secondaryColor: "#059669",
+      accentColor: "#34d399",
+    },
+    corporate: {
+      name: "Corporate Navy",
+      primaryColor: "#1e3a8a",
+      secondaryColor: "#3b82f6",
+      accentColor: "#60a5fa",
+    },
+  };
 
   const handleColorChange = (colorType, value) => {
     setLocalTheme((prev) => ({
@@ -22,34 +93,59 @@ const ThemeSettings = () => {
     }));
   };
 
+  const handlePresetChange = (presetKey) => {
+    const preset = themePresets[presetKey];
+    setLocalTheme((prev) => ({
+      ...prev,
+      primaryColor: preset.primaryColor,
+      secondaryColor: preset.secondaryColor,
+      accentColor: preset.accentColor,
+    }));
+  };
+
   const handleApplyTheme = async () => {
     setIsLoading(true);
     try {
-      // Apply theme immediately for preview
+      // Apply theme immediately to context
       setTheme(localTheme);
-
-      // TODO: Save to API when backend is ready
-      // await api.updateOrganizationSettings(currentOrganization.id, localTheme);
-
+      
+      // Save to backend
+      const response = await updateOrganizationTheme(localTheme);
+      if (response.success) {
+        toast.success("Theme applied and saved successfully!");
+      } else {
+        toast.error("Failed to save theme to server");
+      }
+      
       console.log("Theme settings updated:", localTheme);
     } catch (error) {
       console.error("Error updating theme:", error);
+      toast.error("Failed to apply theme");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResetTheme = () => {
+  const handleResetTheme = async () => {
     const defaultTheme = {
       primaryColor: "#1976d2",
       secondaryColor: "#dc004e",
       accentColor: "#f50057",
       logoUrl: "/logo-default.png",
-      companyName: currentOrganization?.name || "CRM System",
+      companyName: organization?.name || "CRM System",
       darkMode: false,
     };
     setLocalTheme(defaultTheme);
     setTheme(defaultTheme);
+    
+    try {
+      // Save default theme to backend
+      await updateOrganizationTheme(defaultTheme);
+      toast.success("Theme reset to default");
+    } catch (error) {
+      console.error("Error resetting theme:", error);
+      toast.error("Failed to save default theme");
+    }
   };
 
   const previewStyles = {
@@ -57,6 +153,19 @@ const ThemeSettings = () => {
     "--preview-secondary": localTheme.secondaryColor,
     "--preview-accent": localTheme.accentColor,
   };
+
+  if (isLoadingTheme) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-500 mt-2">Loading theme settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -68,8 +177,42 @@ const ThemeSettings = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Theme Configuration */}
           <div className="space-y-6">
+            {/* Theme Presets */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Quick Presets
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(themePresets).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    onClick={() => handlePresetChange(key)}
+                    className="p-3 border rounded-lg hover:border-blue-500 transition-colors text-left"
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: preset.primaryColor }}
+                      />
+                      <div
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: preset.secondaryColor }}
+                      />
+                      <div
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: preset.accentColor }}
+                      />
+                    </div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {preset.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Color Scheme
+              Custom Colors
             </h3>
 
             {/* Primary Color */}
@@ -92,7 +235,7 @@ const ThemeSettings = () => {
                   onChange={(e) =>
                     handleColorChange("primaryColor", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="#1976d2"
                 />
               </div>
@@ -118,7 +261,7 @@ const ThemeSettings = () => {
                   onChange={(e) =>
                     handleColorChange("secondaryColor", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="#dc004e"
                 />
               </div>
@@ -144,7 +287,7 @@ const ThemeSettings = () => {
                   onChange={(e) =>
                     handleColorChange("accentColor", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="#f50057"
                 />
               </div>
@@ -158,10 +301,8 @@ const ThemeSettings = () => {
               <input
                 type="text"
                 value={localTheme.companyName}
-                onChange={(e) =>
-                  handleColorChange("companyName", e.target.value)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={(e) => handleColorChange("companyName", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Your Company Name"
               />
             </div>
@@ -175,7 +316,7 @@ const ThemeSettings = () => {
                 type="url"
                 value={localTheme.logoUrl}
                 onChange={(e) => handleColorChange("logoUrl", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://example.com/logo.png"
               />
             </div>
@@ -189,7 +330,7 @@ const ThemeSettings = () => {
                   onChange={(e) =>
                     handleColorChange("darkMode", e.target.checked)
                   }
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Enable Dark Mode
@@ -201,7 +342,7 @@ const ThemeSettings = () => {
           {/* Preview Section */}
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Preview
+              Live Preview
             </h3>
 
             <div
@@ -211,7 +352,7 @@ const ThemeSettings = () => {
               <div className="space-y-4">
                 {/* Header Preview */}
                 <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-semibold company-branding">
+                  <h4 className="text-lg font-semibold" style={{ color: localTheme.primaryColor }}>
                     {localTheme.companyName}
                   </h4>
                   {localTheme.logoUrl && (
@@ -231,51 +372,50 @@ const ThemeSettings = () => {
                 {/* Button Previews */}
                 <div className="space-y-3">
                   <button
-                    className="btn-primary px-4 py-2 rounded-md text-white font-medium"
+                    className="px-4 py-2 rounded-md text-white font-medium"
                     style={{ backgroundColor: localTheme.primaryColor }}
                   >
                     Primary Button
                   </button>
                   <button
-                    className="btn-secondary px-4 py-2 rounded-md text-white font-medium ml-3"
+                    className="px-4 py-2 rounded-md text-white font-medium ml-3"
                     style={{ backgroundColor: localTheme.secondaryColor }}
                   >
                     Secondary Button
                   </button>
                   <button
-                    className="btn-accent px-4 py-2 rounded-md text-white font-medium ml-3"
+                    className="px-4 py-2 rounded-md text-white font-medium ml-3"
                     style={{ backgroundColor: localTheme.accentColor }}
                   >
                     Accent Button
                   </button>
                 </div>
 
-                {/* Link Preview */}
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Sample text with a{" "}
-                  <span
-                    className="link-primary font-medium"
-                    style={{ color: localTheme.primaryColor }}
-                  >
-                    themed link
-                  </span>{" "}
-                  example.
-                </p>
+                {/* CRM Elements Preview */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: localTheme.primaryColor }}></div>
+                    <span className="text-sm">Active Lead</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: localTheme.secondaryColor }}></div>
+                    <span className="text-sm">Pending Project</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: localTheme.accentColor }}></div>
+                    <span className="text-sm">Urgent Task</span>
+                  </div>
+                </div>
 
-                {/* Card Preview */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
-                  <h5 className="font-medium text-gray-900 dark:text-white">
-                    Sample Card
-                  </h5>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    This is how cards will look with your theme.
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                {/* Progress Bar Preview */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Project Progress</div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="h-2 rounded-full"
-                      style={{
+                      style={{ 
                         backgroundColor: localTheme.primaryColor,
-                        width: "60%",
+                        width: "65%"
                       }}
                     ></div>
                   </div>
@@ -304,7 +444,7 @@ const ThemeSettings = () => {
             <button
               onClick={handleApplyTheme}
               disabled={isLoading}
-              className="px-6 py-2 bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
               style={{ backgroundColor: localTheme.primaryColor }}
             >
               {isLoading ? "Applying..." : "Apply Theme"}

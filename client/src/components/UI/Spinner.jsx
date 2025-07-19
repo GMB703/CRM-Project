@@ -1,65 +1,33 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React from 'react';
 
-export const Spinner = ({
-  size = "md",
-  variant = "primary",
-  className = "",
-  text = "",
-  fullScreen = false,
-}) => {
+export const Spinner = ({ size = 'md', className = '' }) => {
   const sizeClasses = {
-    xs: "w-3 h-3",
-    sm: "w-4 h-4",
-    md: "w-6 h-6",
-    lg: "w-8 h-8",
-    xl: "w-12 h-12",
+    sm: 'h-4 w-4',
+    md: 'h-6 w-6',
+    lg: 'h-10 w-10',
   };
-
-  const variantClasses = {
-    primary: "border-blue-500",
-    secondary: "border-gray-500",
-    white: "border-white",
-    gray: "border-gray-500",
-  };
-
-  const spinner = (
-    <div className={`flex flex-col items-center justify-center ${className}`}>
-      <motion.div
-        className={`${sizeClasses[size]} ${variantClasses[variant]} border-2 border-t-transparent rounded-full`}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      />
-      {text && (
-        <p className="mt-2 text-sm text-gray-600 animate-pulse">{text}</p>
-      )}
-    </div>
+  return (
+    <svg
+      className={`animate-spin text-blue-600 mx-auto ${
+        sizeClasses[size] || sizeClasses.md
+      } ${className}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
   );
-
-  if (fullScreen) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75 backdrop-blur-sm">
-        {spinner}
-      </div>
-    );
-  }
-
-  return spinner;
-};
-
-export default Spinner;
-
-/* [STABLE COMPONENT - DO NOT MODIFY]
- * This Spinner component is complete and stable.
- * Core functionality:
- * - Multiple sizes (xs, sm, md, lg, xl)
- * - Multiple variants (primary, secondary, white, gray)
- * - Full screen mode
- * - Optional loading text
- * - Smooth animation
- * - Custom class support
- *
- * This is a core UI component used for loading states.
- * Changes here could affect all loading indicators.
- * Modify only if absolutely necessary and after thorough UI testing.
- */
+}; 
